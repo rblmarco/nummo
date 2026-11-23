@@ -49,7 +49,7 @@ Le righe storiche ricevono un ID una volta sola.
 
 **Categorie** – una riga per sottocategoria, caricata all'inizio da `docs/categorie.md`: Tipo (Spesa/Entrata), Categoria, Sottocategoria (vuota = nessuna), Attiva (SÌ/NO), Ordine, Icona, Colore.
 
-**Conti** – Nome, Attivo, Ordine, Predefinito (Carta, Contanti, NovaPay, Banca Verde, Banca Delta, Banca Sud, InvestiPiù).
+**Conti** – Nome, Tipo (Spesa / Investimento), Attivo, Ordine, Predefinito. Per ora un solo conto di spesa, **Liquidità** (nome provvisorio), predefinito: tutte le spese partono da lì. I conti di investimento (es. InvestiPiù) stanno nel foglio ma non compaiono nell'app. I conti dei movimenti storici restano come sono.
 
 **Tag** – Tag, Etichetta, Attivo: `#straordinaria`, `#scooter`, `#moto`, `#auto1`, `#auto2`, `#casa2`.
 
@@ -66,7 +66,7 @@ Tre schermate dalla barra in basso (Inserisci, Movimenti, Impostazioni) più il 
 ### 2. Nuova spesa (pannello dal basso)
 - Alto quanto il contenuto, sopra Inserisci oscurata.
 - Intestazione: categoria, data in una capsula (anche futura), pulsante chiudi.
-- Due selettori a scorrimento uno sopra l'altro: sottocategoria e conto. Scelta al centro (capsula grande), opzioni ai lati sfumate; si scorre col dito, lista circolare. Categorie senza sottocategorie: solo il conto.
+- Due selettori a scorrimento uno sopra l'altro: sottocategoria e conto. Scelta al centro (capsula grande), opzioni ai lati sfumate; si scorre col dito, lista circolare. Categorie senza sottocategorie: solo il conto. Il selettore del conto compare solo con almeno due conti di spesa attivi: con il solo conto Liquidità non si vede.
 - Importo grande su una riga, nota sulla riga sotto. Nessun suggerimento automatico.
 - Tag su due righe, selezionabili.
 - Tastierino con virgola e operazioni ÷ × − +, poi Salva spesa.
@@ -119,11 +119,12 @@ Decisione: diventano effettive da sole, senza conferma.
 
 ## Fuori dalla v1
 
-Saldi e gestione conti, trasferimenti tra conti (decisione aperta), grafici e confronti (dashboard), budget, promemoria, scontrini, valute diverse da EUR, più utenti. Idee v2: spese rapide da `RICORRENTI`, promemoria ricorrenti, widget.
+Saldi e gestione conti, trasferimenti tra conti (deciso: no), grafici e confronti (dashboard), budget, promemoria, scontrini, valute diverse da EUR, più utenti. Idee v2: spese rapide da `RICORRENTI`, promemoria ricorrenti, widget.
 
-## Decisioni aperte
+## Decisioni prese
 
-- Trasferimenti tra conti nell'app: sì o no?
-- Conto preselezionato: ultimo usato o fisso?
-- InvestiPiù tra i conti selezionabili?
-- Nome: deciso, **nummo** (app e repo).
+- **Trasferimenti tra conti**: no, non servono nell'app.
+- **Conto**: un solo conto di spesa, Liquidità (nome provvisorio), sempre preselezionato.
+- **Conti di investimento**: esclusi dall'app, nessuna spesa parte da lì.
+- **Nome**: nummo (app e repo).
+- **Spese future**: diventano effettive da sole il giorno indicato.
