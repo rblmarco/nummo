@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 24/11/2026 (notte)
+Ultimo aggiornamento: 24/11/2026 (notte, 2)
 
 **Fase attuale**: frontend iniziato (Impostazioni e lettura dati); backend da installare e provare (vedi `backend/README.md`).
 
@@ -16,7 +16,7 @@ Ultimo aggiornamento: 24/11/2026 (notte)
 ## Da fare
 
 ### 1. Preparazione
-- [ ] Attivare GitHub Pages (Settings → Pages → branch `main`, cartella root)
+- [ ] Attivare GitHub Pages (Settings → Pages → Source: **GitHub Actions**; il workflow `.github/workflows/pages.yml` pubblica `frontend/` a ogni push su `main`)
 
 ### 2. Backend – Bilanci API (`backend/`)
 - [x] `Code.gs`: `doGet` (ping, bootstrap, mese), `doPost` (add / update / delete con ID), chiave, lock
@@ -27,7 +27,7 @@ Ultimo aggiornamento: 24/11/2026 (notte)
 - [x] Proprietà `SHEET_NAME` per scegliere il foglio di destinazione (prova o definitivo)
 - [ ] Pubblicazione del progetto Apps Script e prova delle chiamate
 
-### 3. Frontend – web app (radice del repo)
+### 3. Frontend – web app (`frontend/`)
 - [x] Impostazioni: indirizzo e chiave, test del collegamento (provato solo con un Bilanci API finto)
 - [x] Lettura dati: categorie, conti, tag, movimenti recenti, copia in IndexedDB (provato solo con un Bilanci API finto)
 - [ ] Prova di Impostazioni e bootstrap con il vero Bilanci API
@@ -55,11 +55,13 @@ Ultimo aggiornamento: 24/11/2026 (notte)
 | 22/11/2026 | Design v3 "vetro" scuro e piatto; pannello unico Nuova spesa con selettori a scorrimento |
 | 22/11/2026 | Spese con data futura: diventano effettive da sole il giorno indicato |
 | 23/11/2026 | Nome: nummo; repo pubblico, tutti i dati di esempio anonimi |
+| 24/11/2026 | Frontend nella cartella `frontend/`, pubblicato su GitHub Pages con un workflow di GitHub Actions (senza build) |
 | 24/11/2026 | Durante la prova in parallelo nummo scrive in "Dati nummo (prova)", per evitare doppioni con l'import di 1Money |
 | 24/11/2026 | Niente trasferimenti tra conti; un solo conto di spesa, sempre preselezionato; selettore del conto nascosto se c'è un solo conto |
 
 ## Registro
 
+- **24/11/2026** – Spostato il frontend in `frontend/` e aggiunto il workflow di pubblicazione su GitHub Pages.
 - **24/11/2026** – Frontend: `index.html`, `app.css`, `api.js`, `app.js`. Impostazioni con pannello Collegamento (prova e salva), lettura con bootstrap salvata in IndexedDB, elenchi di categorie, conti e tag. Inserisci e Movimenti sono segnaposto.
 - **24/11/2026** – Confermato il foglio di prova. Scritto il backend Bilanci API (`backend/Code.gs`) con istruzioni di installazione.
 - **24/11/2026** – Letto il codice della dashboard: formato delle righe confermato, colonne nuove ignorate dalla dashboard, trasferimenti ignorati, serve un filtro per le date future. Proposto il foglio di prova.

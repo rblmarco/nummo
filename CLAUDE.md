@@ -13,7 +13,7 @@ Web app personale per registrare spese ed entrate che scrive direttamente nel Go
 ## Struttura da creare
 
 ```
-/                       web app (pubblicata su GitHub Pages dalla radice del branch main)
+frontend/               web app (pubblicata su GitHub Pages dal workflow .github/workflows/pages.yml)
   index.html
   app.css
   app.js                logica UI, stato, coda offline (IndexedDB)
@@ -27,7 +27,7 @@ backend/
 docs/                   specifiche (vedi sopra)
 ```
 
-- Niente framework né build: HTML, CSS e JavaScript puri, così GitHub Pages pubblica i file così come sono.
+- Niente framework né build: HTML, CSS e JavaScript puri, così GitHub Pages pubblica i file così come sono. Il workflow `pages.yml` copia `frontend/` senza trasformarla.
 - Font Inter e Material Symbols Rounded da Google Fonts.
 - Il repo è pubblico: **mai** dati personali, ID del foglio, URL di Bilanci API o chiavi nel codice. Indirizzo e chiave si inseriscono nell'app al primo avvio e restano in `localStorage`.
 
