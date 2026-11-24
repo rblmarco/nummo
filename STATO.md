@@ -1,8 +1,16 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (2)
+Ultimo aggiornamento: 25/11/2026 (3)
 
 **Fase attuale**: backend installato e pubblicato; frontend iniziato (Impostazioni e lettura dati), da provare con il vero Bilanci API.
+
+## Da dove riprendere
+
+1. **Su un altro PC**: `git pull` (o clona il repo). Indirizzo e chiave di Bilanci API non sono nel repo: tienili a portata (URL `/exec` del deployment e `API_KEY` dalle proprietà dello script).
+2. **Attivare GitHub Pages** come in `README-FE.md` (Source: GitHub Actions), poi aprire l'app pubblicata; in alternativa provarla in locale con `python -m http.server 8000` dentro `frontend/`.
+3. **Provare con il vero Bilanci API**: pannello Collegamento → Prova → Salva. Controllare in Impostazioni: "Bilanci API" Collegato, foglio `Dati nummo (prova)`, numeri di Categorie e Conti e tag uguali al foglio. Se c'è un errore, annotare il messaggio esatto.
+4. **Confermare o correggere** le tre scelte "Da confermare (Impostazioni)" nei Punti aperti.
+5. **Passo successivo di sviluppo**: schermata **Inserisci** (anello del mese e categorie in cornice 5×4), vedi `docs/design_v3.md` e `docs/design/LGInserisci.dc.html`. I dati servono già tutti: arrivano da `bootstrap` e sono in `stato.dati` in `frontend/app.js` (funzioni `macroCategorie()` e `movimentiDivisi()`).
 
 ## Fatto
 
@@ -61,6 +69,7 @@ Ultimo aggiornamento: 25/11/2026 (2)
 
 ## Registro
 
+- **25/11/2026** – Aggiunta la sezione "Da dove riprendere".
 - **25/11/2026** – README nella radice: `README.md` (presentazione), `README-BE.md` (era `backend/README.md`), `README-FE.md` (era `frontend/README.md`).
 - **25/11/2026** – Scritto `frontend/README.md`: attivazione di GitHub Pages, primo avvio, prova in locale, workflow `pages.yml`.
 - **24/11/2026** – Backend installato e pubblicato seguendo `backend/README.md` (fatto a mano).
