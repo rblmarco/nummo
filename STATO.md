@@ -1,8 +1,8 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 24/11/2026 (notte, 2)
+Ultimo aggiornamento: 24/11/2026 (notte, 3)
 
-**Fase attuale**: frontend iniziato (Impostazioni e lettura dati); backend da installare e provare (vedi `backend/README.md`).
+**Fase attuale**: backend installato e pubblicato; frontend iniziato (Impostazioni e lettura dati), da provare con il vero Bilanci API.
 
 ## Fatto
 
@@ -22,10 +22,10 @@ Ultimo aggiornamento: 24/11/2026 (notte, 2)
 - [x] `Code.gs`: `doGet` (ping, bootstrap, mese), `doPost` (add / update / delete con ID), chiave, lock
 - [x] `setupFogli()`: crea i fogli Categorie, Conti, Tag e il foglio di prova
 - [x] `assegnaID()`: ID alle righe storiche (da usare il giorno del cambio)
-- [ ] Installazione: progetto Apps Script, proprietà, `setupFogli()`, tag e conti a mano, deployment
+- [x] Installazione: progetto Apps Script, proprietà, `setupFogli()`, tag e conti a mano, deployment
 - [ ] Dashboard: in `getDati()` saltare le righe con data successiva a oggi (serve solo dal giorno del cambio: durante la prova nummo scrive nel foglio di prova)
 - [x] Proprietà `SHEET_NAME` per scegliere il foglio di destinazione (prova o definitivo)
-- [ ] Pubblicazione del progetto Apps Script e prova delle chiamate
+- [x] Pubblicazione del progetto Apps Script e prova delle chiamate
 
 ### 3. Frontend – web app (`frontend/`)
 - [x] Impostazioni: indirizzo e chiave, test del collegamento (provato solo con un Bilanci API finto)
@@ -61,6 +61,7 @@ Ultimo aggiornamento: 24/11/2026 (notte, 2)
 
 ## Registro
 
+- **24/11/2026** – Backend installato e pubblicato seguendo `backend/README.md` (fatto a mano).
 - **24/11/2026** – Spostato il frontend in `frontend/` e aggiunto il workflow di pubblicazione su GitHub Pages.
 - **24/11/2026** – Frontend: `index.html`, `app.css`, `api.js`, `app.js`. Impostazioni con pannello Collegamento (prova e salva), lettura con bootstrap salvata in IndexedDB, elenchi di categorie, conti e tag. Inserisci e Movimenti sono segnaposto.
 - **24/11/2026** – Confermato il foglio di prova. Scritto il backend Bilanci API (`backend/Code.gs`) con istruzioni di installazione.
