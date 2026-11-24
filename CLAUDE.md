@@ -4,6 +4,7 @@ Web app personale per registrare spese ed entrate che scrive direttamente nel Go
 
 ## Dove sta cosa
 
+- **Stato del progetto**: `STATO.md` nella radice: fatto, da fare, punti aperti, decisioni, registro. Leggilo all'inizio di ogni sessione.
 - **Repo locale**: questa cartella (il percorso sul Mac è nelle istruzioni del progetto Claude, non qui: il repo è pubblico).
 - **Specifiche**: `docs/overview_funzionale.md` (cosa fa l'app) e `docs/design_v3.md` (aspetto). Sono la fonte di verità: leggile prima di scrivere codice.
 - **Riferimento visivo**: `docs/design/*.dc.html`, le schermate approvate del canvas di design. Sono HTML con stili inline: usale per misure e colori, non copiarle come codice.
@@ -32,12 +33,12 @@ docs/                   specifiche (vedi sopra)
 
 ## Backend: Bilanci API (`backend/Code.gs`)
 
-- Progetto Apps Script **separato** dalla dashboard esistente. Apre il foglio con `SpreadsheetApp.openById(ID)`; ID e chiave stanno in `PropertiesService` (proprietà script `SHEET_ID`, `API_KEY`).
+- Progetto Apps Script **separato** dalla dashboard esistente. Apre il foglio con `SpreadsheetApp.openById(ID)`; ID e chiave stanno in `PropertiesService` (proprietà script `SHEET_ID`, `SHEET_NAME`, `API_KEY`).
 - Pubblicato come app web: "Esegui come: me", "Chi ha accesso: Chiunque". Dopo ogni modifica: Gestisci deployment → matita → Nuova versione (l'URL non cambia).
 - `doGet(e)`: `action=bootstrap` restituisce JSON con categorie attive, conti, tag e movimenti degli ultimi 3 mesi più quelli futuri.
 - `doPost(e)`: corpo JSON in `text/plain` (evita il preflight CORS) con `key` e una lista di operazioni `add` / `update` / `delete` identificate da ID. Usa `LockService`; un `add` con ID già presente non duplica.
 - Ogni risposta: `ContentService` JSON con `ok` ed eventuale `error`.
-- Scrive in "Dati 1Money" con le stesse colonne del CSV di 1Money più `ID`, `INSERITO_IL`, `FONTE` (`app`), `MODIFICATO_IL`. **Il formato esatto di data e importo va preso dal `Code.gs` della dashboard**: se non lo hai, chiedilo prima di scrivere il backend.
+- Scrive in "Dati 1Money" con le stesse colonne del CSV di 1Money più `ID`, `INSERITO_IL`, `FONTE` (`app`), `MODIFICATO_IL`. Formato esatto (data `dd/mm/yy`, importo positivo con punto decimale, riga inserita in cima come testo) in `docs/overview_funzionale.md`, sezione Fogli e struttura dati. Il foglio di destinazione è nella proprietà `SHEET_NAME`: durante la prova "Dati nummo (prova)", poi "Dati 1Money".
 - Fogli di configurazione: Categorie, Conti, Tag (colonne in `docs/overview_funzionale.md`). Includi una funzione `setupFogli()` da lanciare una volta che li crea e li compila dallo schema, e una `assegnaID()` che dà un ID alle righe storiche senza.
 
 ## Frontend
@@ -55,3 +56,4 @@ docs/                   specifiche (vedi sopra)
 - Lavora per passi piccoli e funzionanti: backend → bootstrap in lettura → inserimento → coda offline → Movimenti → Impostazioni → PWA.
 - Commit piccoli con messaggi in italiano. Non fare push senza che te lo chieda.
 - Dì sempre cosa non hai potuto provare (tutto ciò che gira dentro Google Apps Script).
+- **Tieni aggiornato `STATO.md`** a ogni passo concluso o decisione presa: spunta le attività, aggiorna punti aperti e decisioni, aggiungi una riga al registro con la data. Aggiorna anche la data in cima.

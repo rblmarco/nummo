@@ -1,8 +1,8 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 24/11/2026
+Ultimo aggiornamento: 24/11/2026 (sera)
 
-**Fase attuale**: specifiche e design approvati, in attesa del codice della dashboard per scrivere il backend.
+**Fase attuale**: backend scritto, da installare e provare (vedi `backend/README.md`).
 
 ## Fatto
 
@@ -11,18 +11,20 @@ Ultimo aggiornamento: 24/11/2026
 - [x] Schema categorie e tag (`docs/categorie.md`)
 - [x] Repo creato, `CLAUDE.md` e documentazione resi anonimi
 - [x] Decisioni sui conti: un solo conto di spesa (Liquidità), niente trasferimenti tra conti
+- [x] Letto il codice della dashboard: formato delle righe, colonne lette, trattamento dei trasferimenti
 
 ## Da fare
 
 ### 1. Preparazione
-- [ ] Ricevere `Code.gs` e `Index.html` della dashboard, per il formato delle righe in "Dati 1Money"
 - [ ] Attivare GitHub Pages (Settings → Pages → branch `main`, cartella root)
 
 ### 2. Backend – Bilanci API (`backend/`)
-- [ ] `Code.gs`: `doGet` (bootstrap), `doPost` (add / update / delete con ID), chiave, lock
-- [ ] `setupFogli()`: crea e compila i fogli Categorie, Conti, Tag
-- [ ] `assegnaID()`: ID alle righe storiche
-- [ ] Dashboard: contare solo le righe con data fino a oggi (spese programmate)
+- [x] `Code.gs`: `doGet` (ping, bootstrap, mese), `doPost` (add / update / delete con ID), chiave, lock
+- [x] `setupFogli()`: crea i fogli Categorie, Conti, Tag e il foglio di prova
+- [x] `assegnaID()`: ID alle righe storiche (da usare il giorno del cambio)
+- [ ] Installazione: progetto Apps Script, proprietà, `setupFogli()`, tag e conti a mano, deployment
+- [ ] Dashboard: in `getDati()` saltare le righe con data successiva a oggi (serve solo dal giorno del cambio: durante la prova nummo scrive nel foglio di prova)
+- [x] Proprietà `SHEET_NAME` per scegliere il foglio di destinazione (prova o definitivo)
 - [ ] Pubblicazione del progetto Apps Script e prova delle chiamate
 
 ### 3. Frontend – web app (radice del repo)
@@ -40,7 +42,7 @@ Ultimo aggiornamento: 24/11/2026
 
 ## Punti aperti
 
-- **Investimenti**: tipo "Investimento" nell'app (trasferimento da Liquidità al conto di investimento) oppure fuori dall'app? Dipende da come la dashboard calcola quanto si mette via. Si decide dopo aver letto `Code.gs`.
+- **Investimenti**: tipo "Investimento" nell'app (trasferimento da Liquidità al conto di investimento) oppure fuori dall'app? La dashboard ignora i trasferimenti, quindi registrarli non cambia il risparmio: serve solo a tenerne traccia.
 - **Nome del conto di spesa**: "Liquidità" è provvisorio.
 
 ## Decisioni prese
@@ -51,9 +53,12 @@ Ultimo aggiornamento: 24/11/2026
 | 22/11/2026 | Design v3 "vetro" scuro e piatto; pannello unico Nuova spesa con selettori a scorrimento |
 | 22/11/2026 | Spese con data futura: diventano effettive da sole il giorno indicato |
 | 23/11/2026 | Nome: nummo; repo pubblico, tutti i dati di esempio anonimi |
+| 24/11/2026 | Durante la prova in parallelo nummo scrive in "Dati nummo (prova)", per evitare doppioni con l'import di 1Money |
 | 24/11/2026 | Niente trasferimenti tra conti; un solo conto di spesa, sempre preselezionato; selettore del conto nascosto se c'è un solo conto |
 
 ## Registro
 
+- **24/11/2026** – Confermato il foglio di prova. Scritto il backend Bilanci API (`backend/Code.gs`) con istruzioni di installazione.
+- **24/11/2026** – Letto il codice della dashboard: formato delle righe confermato, colonne nuove ignorate dalla dashboard, trasferimenti ignorati, serve un filtro per le date future. Proposto il foglio di prova.
 - **24/11/2026** – Creato questo file. Registrate le decisioni sui conti e il punto aperto sugli investimenti.
 - **23/11/2026** – Creato il repo con `CLAUDE.md`, specifiche, design e mockup anonimi.

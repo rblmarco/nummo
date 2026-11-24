@@ -36,7 +36,14 @@ Dashboard Apps Script di oggi – solo lettura, invariata
 
 ## Fogli e struttura dati
 
-**Dati 1Money** – resta il foglio letto dalla dashboard. L'app scrive con le stesse colonne del CSV di 1Money (`DATA dd/mm/yy`, `TIPOLOGIA`, `DAL CONTO`, `AL CONTO/ALLA CATEGORIA` come "Macro (Sub)", `IMPORTO`, `VALUTA`, `IMPORTO 2`, `VALUTA 2`, `TAG`, `NOTE`). Il formato esatto (testo o data, separatore decimale) va verificato su `Code.gs` della dashboard prima di scrivere codice. In coda quattro colonne nuove:
+**Dati 1Money** – resta il foglio letto dalla dashboard. L'app scrive con le stesse colonne del CSV di 1Money (`DATA dd/mm/yy`, `TIPOLOGIA`, `DAL CONTO`, `AL CONTO/ALLA CATEGORIA` come "Macro (Sub)", `IMPORTO`, `VALUTA`, `IMPORTO 2`, `VALUTA 2`, `TAG`, `NOTE`). Formato verificato sul `Code.gs` della dashboard e sugli export (24/11/2026):
+
+- le righe nuove si inseriscono in cima (riga 2), come fa l'import, in formato testo (`@`);
+- `DATA` `dd/mm/yy` (es. `09/11/26`); `TIPOLOGIA` `Spesa` o `Entrata`; `DAL CONTO` il conto (Liquidità); `AL CONTO/ALLA CATEGORIA` `Macro (Sub)` oppure solo `Macro`;
+- `IMPORTO` sempre positivo, punto decimale e niente zeri finali (`11.5`, `36`); `VALUTA` `EUR`; `IMPORTO 2` uguale a `IMPORTO`; `VALUTA 2` `EUR`; `TAG` vuoto; `NOTE` con gli hashtag;
+- la dashboard legge solo le prime 10 colonne e solo le righe `Spesa` ed `Entrata`: i `Trasferimento` sono ignorati.
+
+In coda quattro colonne nuove, che la dashboard non legge:
 
 | Colonna | Contenuto | A cosa serve |
 | --- | --- | --- |
@@ -49,7 +56,7 @@ Le righe storiche ricevono un ID una volta sola.
 
 **Categorie** – una riga per sottocategoria, caricata all'inizio da `docs/categorie.md`: Tipo (Spesa/Entrata), Categoria, Sottocategoria (vuota = nessuna), Attiva (SÌ/NO), Ordine, Icona, Colore.
 
-**Conti** – Nome, Tipo (Spesa / Investimento), Attivo, Ordine, Predefinito. Per ora un solo conto di spesa, **Liquidità** (nome provvisorio), predefinito: tutte le spese partono da lì. I conti di investimento (es. InvestiPiù) stanno nel foglio ma non compaiono nell'app. I conti dei movimenti storici restano come sono.
+**Conti** – Nome, Tipo (Spesa / Investimento), Attivo, Ordine, Predefinito. Per ora un solo conto di spesa, **Liquidità** (nome provvisorio), predefinito: tutte le spese partono da lì. I conti di investimento (es. InvestiPiù) stanno nel foglio; se e come mostrarli nell'app è un punto aperto (vedi sotto). I conti dei movimenti storici restano come sono.
 
 **Tag** – Tag, Etichetta, Attivo: `#straordinaria`, `#scooter`, `#moto`, `#auto1`, `#auto2`, `#casa2`.
 
@@ -110,12 +117,13 @@ Decisione: diventano effettive da sole, senza conferma.
 - Si scrivono subito nel foglio con la loro data, nessuna colonna in più.
 - Fino a quel giorno: sezione In programma, escluse da anello e totali.
 - Dal giorno indicato contano come le altre.
-- La dashboard deve contare solo righe con data ≤ oggi: verificare `Code.gs` ed eventualmente aggiungere il filtro.
+- Oggi la dashboard le conterebbe subito e sposterebbe anche la data dei confronti "a parità di periodo" (che usa l'ultima data presente): in `getDati()` va aggiunto il filtro che salta le righe con data successiva a oggi.
 
 ## Convivenza con dashboard e passaggio da 1Money
 
 - La dashboard resta com'è e legge Dati 1Money.
 - Passaggio: giorno di cambio, ultimo import 1Money da Drive quel giorno, poi solo l'app. Prova in parallelo per qualche giorno.
+- **Prova in parallelo**: l'import di 1Money riconosce i doppioni da data, tipo, conto, importo e nota. Con conti diversi (Liquidità contro il conto della banca) la stessa spesa registrata in entrambe le app finirebbe due volte nel foglio. Deciso: durante la prova nummo scrive in un foglio a parte, "Dati nummo (prova)", scelto da una proprietà dello script (`SHEET_NAME`); al giorno di cambio si passa a "Dati 1Money".
 
 ## Fuori dalla v1
 
@@ -125,6 +133,9 @@ Saldi e gestione conti, trasferimenti tra conti (deciso: no), grafici e confront
 
 - **Trasferimenti tra conti**: no, non servono nell'app.
 - **Conto**: un solo conto di spesa, Liquidità (nome provvisorio), sempre preselezionato.
-- **Conti di investimento**: esclusi dall'app, nessuna spesa parte da lì.
 - **Nome**: nummo (app e repo).
 - **Spese future**: diventano effettive da sole il giorno indicato.
+
+## Punti aperti
+
+- **Investimenti**: oggi in 1Money un investimento si registra come trasferimento da un conto bancario al conto di investimento (es. InvestiPiù). Da decidere se l'app deve permetterlo, per esempio con un tipo "Investimento" che scrive un `Trasferimento` da Liquidità al conto scelto, oppure se gli investimenti restano fuori dall'app. Verificato: la dashboard ignora i `Trasferimento` e calcola il risparmio come entrate meno spese, quindi registrare un investimento come trasferimento non cambia i suoi numeri; servirebbe solo a tenerne traccia. Le spese in Banca e pratiche › Investimenti (commissioni) restano spese.
