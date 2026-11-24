@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 24/11/2026 (notte, 3)
+Ultimo aggiornamento: 25/11/2026
 
 **Fase attuale**: backend installato e pubblicato; frontend iniziato (Impostazioni e lettura dati), da provare con il vero Bilanci API.
 
@@ -61,6 +61,7 @@ Ultimo aggiornamento: 24/11/2026 (notte, 3)
 
 ## Registro
 
+- **25/11/2026** – Scritto `frontend/README.md`: attivazione di GitHub Pages, primo avvio, prova in locale, workflow `pages.yml`.
 - **24/11/2026** – Backend installato e pubblicato seguendo `backend/README.md` (fatto a mano).
 - **24/11/2026** – Spostato il frontend in `frontend/` e aggiunto il workflow di pubblicazione su GitHub Pages.
 - **24/11/2026** – Frontend: `index.html`, `app.css`, `api.js`, `app.js`. Impostazioni con pannello Collegamento (prova e salva), lettura con bootstrap salvata in IndexedDB, elenchi di categorie, conti e tag. Inserisci e Movimenti sono segnaposto.
