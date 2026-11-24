@@ -1,8 +1,8 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 24/11/2026 (sera)
+Ultimo aggiornamento: 24/11/2026 (notte)
 
-**Fase attuale**: backend scritto, da installare e provare (vedi `backend/README.md`).
+**Fase attuale**: frontend iniziato (Impostazioni e lettura dati); backend da installare e provare (vedi `backend/README.md`).
 
 ## Fatto
 
@@ -28,8 +28,9 @@ Ultimo aggiornamento: 24/11/2026 (sera)
 - [ ] Pubblicazione del progetto Apps Script e prova delle chiamate
 
 ### 3. Frontend – web app (radice del repo)
-- [ ] Impostazioni: indirizzo e chiave, test del collegamento
-- [ ] Lettura dati: categorie, conti, tag, movimenti recenti
+- [x] Impostazioni: indirizzo e chiave, test del collegamento (provato solo con un Bilanci API finto)
+- [x] Lettura dati: categorie, conti, tag, movimenti recenti, copia in IndexedDB (provato solo con un Bilanci API finto)
+- [ ] Prova di Impostazioni e bootstrap con il vero Bilanci API
 - [ ] Inserisci: anello del mese e categorie in cornice
 - [ ] Pannello Nuova spesa: selettore sottocategoria, importo, nota, tag, tastierino, data
 - [ ] Salvataggio locale e coda offline (IndexedDB), invio in background
@@ -44,6 +45,7 @@ Ultimo aggiornamento: 24/11/2026 (sera)
 
 - **Investimenti**: tipo "Investimento" nell'app (trasferimento da Liquidità al conto di investimento) oppure fuori dall'app? La dashboard ignora i trasferimenti, quindi registrarli non cambia il risparmio: serve solo a tenerne traccia.
 - **Nome del conto di spesa**: "Liquidità" è provvisorio.
+- **Da confermare (Impostazioni)**: indirizzo, chiave e indirizzo della dashboard si inseriscono in un pannello dal basso "Collegamento" (non disegnato nel design v3); gli errori sono mostrati in ambra, perché la palette non ha un rosso; la riga "Conto preselezionato" mostra il conto predefinito del foglio, senza scelta.
 
 ## Decisioni prese
 
@@ -58,6 +60,7 @@ Ultimo aggiornamento: 24/11/2026 (sera)
 
 ## Registro
 
+- **24/11/2026** – Frontend: `index.html`, `app.css`, `api.js`, `app.js`. Impostazioni con pannello Collegamento (prova e salva), lettura con bootstrap salvata in IndexedDB, elenchi di categorie, conti e tag. Inserisci e Movimenti sono segnaposto.
 - **24/11/2026** – Confermato il foglio di prova. Scritto il backend Bilanci API (`backend/Code.gs`) con istruzioni di installazione.
 - **24/11/2026** – Letto il codice della dashboard: formato delle righe confermato, colonne nuove ignorate dalla dashboard, trasferimenti ignorati, serve un filtro per le date future. Proposto il foglio di prova.
 - **24/11/2026** – Creato questo file. Registrate le decisioni sui conti e il punto aperto sugli investimenti.
