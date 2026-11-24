@@ -1,6 +1,6 @@
 # Bilanci API – pubblicazione
 
-Backend della web app nummo: un progetto Apps Script **separato** dalla dashboard, che legge e scrive nel Google Sheet.
+Backend della web app nummo (`backend/Code.gs`): un progetto Apps Script **separato** dalla dashboard, che legge e scrive nel Google Sheet.
 
 ## Prima installazione
 

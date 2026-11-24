@@ -1,8 +1,8 @@
 # nummo – web app, pubblicazione
 
-Frontend di nummo: HTML, CSS e JavaScript puri, senza framework né build. È pubblicato su **GitHub Pages** dal workflow `.github/workflows/pages.yml`, che copia questa cartella così com'è.
+Frontend di nummo: HTML, CSS e JavaScript puri, senza framework né build. È pubblicato su **GitHub Pages** dal workflow `.github/workflows/pages.yml`, che copia la cartella `frontend/` così com'è.
 
-Prima di iniziare deve essere già pronto Bilanci API (vedi `backend/README.md`): servono l'URL che termina con `/exec` e la chiave `API_KEY`.
+Prima di iniziare deve essere già pronto Bilanci API (vedi `README-BE.md`): servono l'URL che termina con `/exec` e la chiave `API_KEY`.
 
 ## Prima pubblicazione
 
@@ -49,9 +49,9 @@ Basta il push su `main`: il workflow ripubblica l'app in un paio di minuti. Part
 | Ambiente | `github-pages`: l'indirizzo pubblicato compare nel riepilogo dell'esecuzione |
 | Concorrenza | gruppo `pages`: una pubblicazione nuova annulla quella ancora in corso |
 
-Il repository è pubblico e tutto ciò che sta in questa cartella è pubblicato, compreso questo file: niente dati personali, URL di Bilanci API o chiavi.
+Il repository è pubblico e tutto ciò che sta in `frontend/` è pubblicato: niente dati personali, URL di Bilanci API o chiavi.
 
-## File
+## File in `frontend/`
 
 | File | Contenuto |
 | --- | --- |

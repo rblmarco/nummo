@@ -13,6 +13,9 @@ Web app personale per registrare spese ed entrate che scrive direttamente nel Go
 ## Struttura da creare
 
 ```
+README.md               presentazione del progetto, rimanda ai due README seguenti
+README-BE.md            installazione e pubblicazione di Bilanci API
+README-FE.md            pubblicazione su GitHub Pages e primo avvio della web app
 frontend/               web app (pubblicata su GitHub Pages dal workflow .github/workflows/pages.yml)
   index.html
   app.css
@@ -23,7 +26,6 @@ frontend/               web app (pubblicata su GitHub Pages dal workflow .github
   icons/
 backend/
   Code.gs               Bilanci API: progetto Apps Script separato, si incolla a mano
-  README.md             passi di pubblicazione
 docs/                   specifiche (vedi sopra)
 ```
 
