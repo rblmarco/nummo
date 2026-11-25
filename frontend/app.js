@@ -476,7 +476,7 @@
     const conto = contoPredefinito();
 
     const html =
-      '<h1 class="titolo">Impostazioni</h1>' +
+      '<h1 class="titolo fisso">Impostazioni</h1><div class="scorre">' +
 
       '<span class="gruppo-titolo">Collegamento</span>' +
       '<div class="gruppo vetro">' +
@@ -507,7 +507,7 @@
         (c.dashboard
           ? riga({ href: c.dashboard, link: true, icona: 'insights', colore: '#2563EB', nome: 'Apri la dashboard', fine: 'open_in_new', fineClasse: 'nav' })
           : riga({ azione: 'collegamento', link: true, icona: 'insights', colore: '#2563EB', nome: 'Apri la dashboard', valore: 'Da impostare', fine: 'chevron_right', fineClasse: 'nav' })) +
-      '</div>';
+      '</div></div>';
 
     $('#s-impostazioni').innerHTML = html;
   }
@@ -554,12 +554,12 @@
   function renderInserisci() {
     const d = stato.dati;
     const titolo = stato.tipo === 'Entrata' ? 'Entrate' : 'Spese';
-    const testa = '<div class="testa"><h1 class="titolo">' + titolo + '</h1>' + (configurato(stato.config) ? capsulaSync() : '') + '</div>';
+    const testa = '<div class="testa fisso"><h1 class="titolo">' + titolo + '</h1>' + (configurato(stato.config) ? capsulaSync() : '') + '</div>';
     if (!configurato(stato.config) || !d) {
       const corpo = !configurato(stato.config)
         ? 'Per iniziare collega l\'app a Bilanci API in <strong>Impostazioni</strong>.'
         : (stato.occupato ? 'Scarico i dati dal foglio…' : 'Nessun dato ancora: apri <strong>Impostazioni</strong> e premi Sincronizza ora.');
-      $('#s-inserisci').innerHTML = testa + '<div class="segnaposto vetro">' + corpo + '</div>';
+      $('#s-inserisci').innerHTML = testa + '<div class="scorre"><div class="segnaposto vetro">' + corpo + '</div></div>';
       return;
     }
 
@@ -609,20 +609,20 @@
     }
 
     $('#s-inserisci').innerHTML = testa +
-      '<div class="mese">' +
+      '<div class="mese fisso">' +
         '<button type="button" class="tondo-40 vetro-leggero" data-azione="mese" data-passo="-1" aria-label="Mese precedente"><span class="ms" aria-hidden="true">chevron_left</span></button>' +
         '<span class="mese-nome">' + nomeMese(ym) + '</span>' +
         '<button type="button" class="tondo-40 vetro-leggero" data-azione="mese" data-passo="1" aria-label="Mese successivo"' + (ultimo ? ' disabled' : '') + '><span class="ms" aria-hidden="true">chevron_right</span></button>' +
       '</div>' +
-      '<div class="segmentato vetro-leggero" role="tablist">' +
+      '<div class="segmentato vetro-leggero fisso" role="tablist">' +
         ['Spesa', 'Entrata'].map(function (t) {
           return '<button type="button" role="tab" data-azione="tipo" data-tipo="' + t + '" aria-selected="' + (stato.tipo === t) + '"' + (stato.tipo === t ? ' class="attivo"' : '') + '>' + t + '</button>';
         }).join('') +
       '</div>' +
-      '<div class="cornice">' + celle +
+      '<div class="scorre"><div class="cornice">' + celle +
         '<div class="anello">' + anello(segmenti, tot[stato.tipo]) + '<div class="anello-centro">' + centro + '</div></div>' +
       '</div>' +
-      '<p class="suggerimento">Tocca una categoria per registrare ' + (stato.tipo === 'Entrata' ? 'un\'entrata' : 'una spesa') + '</p>';
+      '<p class="suggerimento">Tocca una categoria per registrare ' + (stato.tipo === 'Entrata' ? 'un\'entrata' : 'una spesa') + '</p></div>';
   }
 
   /* ---------- Movimenti ---------- */
@@ -676,7 +676,7 @@
     else if (m.inAttesa) stato_ = '<span class="mov-stato attesa"><span class="ms" aria-hidden="true">schedule</span>in attesa</span>';
     else stato_ = '<span class="mov-stato"><span class="ms" aria-hidden="true">cloud_done</span></span>';
     const modificabile = !!m.id;
-    return '<div class="mov-scorre' + (modificabile ? '' : ' fisso') + '" data-id="' + esc(m.id || '') + '">' +
+    return '<div class="mov-scorre' + (modificabile ? '' : ' senza-id') + '" data-id="' + esc(m.id || '') + '">' +
       (modificabile ? '<div class="mov-azioni">' +
         '<button type="button" class="mov-az duplica" data-azione="duplica" data-id="' + esc(m.id) + '"><span class="ms" aria-hidden="true">content_copy</span>Duplica</button>' +
         '<button type="button" class="mov-az elimina" data-azione="elimina" data-id="' + esc(m.id) + '"><span class="ms" aria-hidden="true">delete</span><span class="mov-az-testo">Elimina</span></button>' +
@@ -756,8 +756,8 @@
   function renderMovimenti() {
     const d = stato.dati;
     if (!d) {
-      $('#s-movimenti').innerHTML = '<h1 class="titolo">Movimenti</h1><div class="segnaposto vetro">' +
-        (configurato(stato.config) ? 'Nessun movimento scaricato: apri <strong>Impostazioni</strong> e premi Sincronizza ora.' : 'Per iniziare collega l\'app a Bilanci API in <strong>Impostazioni</strong>.') + '</div>';
+      $('#s-movimenti').innerHTML = '<h1 class="titolo fisso">Movimenti</h1><div class="scorre"><div class="segnaposto vetro">' +
+        (configurato(stato.config) ? 'Nessun movimento scaricato: apri <strong>Impostazioni</strong> e premi Sincronizza ora.' : 'Per iniziare collega l\'app a Bilanci API in <strong>Impostazioni</strong>.') + '</div></div>';
       return;
     }
     const f = stato.filtri;
@@ -765,11 +765,11 @@
     const cerca = document.getElementById('mov-cerca');
     // Se la ricerca è già sullo schermo non la si ridisegna (si perderebbe il fuoco)
     if (!cerca) {
-      $('#s-movimenti').innerHTML = '<h1 class="titolo mov-titolo-pagina">Movimenti</h1>' +
-        '<label class="cerca vetro-leggero"><span class="ms" aria-hidden="true">search</span><span class="sr">Cerca</span>' +
+      $('#s-movimenti').innerHTML = '<h1 class="titolo mov-titolo-pagina fisso">Movimenti</h1>' +
+        '<label class="cerca vetro-leggero fisso"><span class="ms" aria-hidden="true">search</span><span class="sr">Cerca</span>' +
           '<input id="mov-cerca" type="search" autocomplete="off" enterkeyhint="search" placeholder="Cerca nelle note" value="' + esc(f.testo) + '"></label>' +
-        '<div class="filtri" id="mov-filtri"></div>' +
-        '<div id="mov-lista"></div>';
+        '<div class="filtri fisso" id="mov-filtri"></div>' +
+        '<div class="scorre" id="mov-lista"></div>';
     }
     document.getElementById('mov-filtri').innerHTML =
       chipFiltro('filtro-mese', nomeMese(f.ym), true) +
@@ -837,7 +837,7 @@
     });
   }
   document.addEventListener('pointerdown', function (ev) {
-    const w = ev.target.closest('.mov-scorre:not(.fisso)');
+    const w = ev.target.closest('.mov-scorre:not(.senza-id)');
     if (!w || ev.target.closest('.mov-azioni')) return;
     scorriRiga = { w: w, riga: w.querySelector('.mov-riga'), x0: ev.clientX, y0: ev.clientY, dx: 0, id: ev.pointerId, orizz: null, aperta: w.classList.contains('aperta') };
   });
@@ -1389,6 +1389,8 @@
       stato.filtri[k] = el.dataset.valore || null;
       chiudiPannello();
       render();
+      const lista = document.getElementById('mov-lista');
+      if (lista) lista.scrollTop = 0;
     }
     else if (a === 'mese') { stato.ym = ymSposta(stato.ym || ymOggi(), +el.dataset.passo); if (stato.ym > ymOggi()) stato.ym = ymOggi(); render(); }
     else if (a === 'tipo') { stato.tipo = el.dataset.tipo; render(); }

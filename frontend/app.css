@@ -72,11 +72,24 @@ a { color: var(--accento); }
 
 /* ---------- Struttura ---------- */
 
+/* La pagina non scorre: ogni schermata ha una parte fissa in alto e un'area .scorre
+   che scorre solo se il contenuto non ci sta. Lo spazio in fondo lascia libera la barra. */
+html, body { height: 100%; overflow: hidden; }
 #app {
   max-width: 560px;
+  height: 100%;
   margin: 0 auto;
-  padding: env(safe-area-inset-top) 16px calc(112px + env(safe-area-inset-bottom)) 16px;
+  padding: env(safe-area-inset-top) 16px 0 16px;
 }
+.schermo:not([hidden]) { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.fisso { flex-shrink: 0; }
+.scorre {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  margin: 0 -16px; padding: 0 16px calc(112px + env(safe-area-inset-bottom));
+  scrollbar-width: none;
+}
+.scorre::-webkit-scrollbar { display: none; }
 
 .titolo {
   display: block;
@@ -546,13 +559,9 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
    Con le barre del browser lo schermo utile del telefono è più basso di 892 px:
    la cornice prende l'altezza che resta e le righe si stringono, l'anello si adatta. */
 
-#s-inserisci:not([hidden]) {
-  display: flex; flex-direction: column;
-  height: calc(100dvh - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  min-height: 560px;
-}
+#s-inserisci .scorre { display: flex; flex-direction: column; }
 #s-inserisci .cornice {
-  flex: 1 1 auto; min-height: 0;
+  flex: 1 0 auto;
   grid-template-rows: repeat(4, minmax(86px, 120px));
   align-content: center;
 }

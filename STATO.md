@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (10)
+Ultimo aggiornamento: 25/11/2026 (11)
 
 **Fase attuale**: Movimenti scritta e provata con un Bilanci API finto (lista, In programma, modifica, duplica, elimina, ricerca, filtri, coda offline per update e delete). Prossimo passo: prova di Movimenti sul telefono, poi service worker.
 
@@ -82,10 +82,12 @@ Ultimo aggiornamento: 25/11/2026 (10)
 | 25/11/2026 | Movimenti: titolo = nota senza tag (tag come etichette), altrimenti sottocategoria o categoria; conto nascosto se è l'unico conto di spesa; In programma (tutte le date future) solo sul mese in corso |
 | 25/11/2026 | Movimenti: tocco = modifica nello stesso pannello con in più il selettore Categoria ("Salva modifiche"); Duplica apre il pannello compilato con la data di oggi; Elimina chiede un secondo tocco su "Conferma" |
 | 25/11/2026 | Categorie, sottocategorie e conti non più attivi: righe in grigio in Movimenti, restano scelti in modifica finché non li cambi, contano nei totali di Inserisci con un segmento grigio; movimenti vecchi senza sottocategoria mostrano "Nessuna". Filtri: ultimi 24 mesi, tutte le categorie, conti di spesa più quelli del mese; la ricerca vale sul mese scelto. Righe senza ID (storiche, prima di `assegnaID()`) visibili ma non modificabili |
+| 25/11/2026 | La pagina non scorre mai: ogni schermata ha una parte fissa (Inserisci: titolo, mese, Spesa / Entrata; Movimenti: titolo, ricerca, filtri; Impostazioni: titolo) e sotto un'area che scorre solo se il contenuto non ci sta |
 | 25/11/2026 | Investimenti: si registreranno in nummo come trasferimenti (voce "Sposta"), come in 1Money; sostituisce "niente trasferimenti tra conti" del 24/11. Si fa dopo la fine dell'app principale |
 
 ## Registro
 
+- **25/11/2026** – Struttura delle schermate: `html` e `body` non scorrono, ogni schermata è una colonna con parti `.fisso` e un'area `.scorre` che lascia libero lo spazio della barra in basso. Provato in Chrome headless a 892, 780 e 700 px: Inserisci non scorre fino a circa 720 px (sotto scorre solo la cornice), con più di 14 categorie scorre solo la cornice, in Movimenti ricerca e filtri restano fermi.
 - **25/11/2026** – Schermata Movimenti in `frontend/app.js` e `frontend/app.css`: lista per giorno con totali, In programma, avviso in attesa, scorrimento con Duplica ed Elimina, pannello in modifica con selettore Categoria, filtri e ricerca; coda offline estesa a `update` e `delete` (`accoda()`, versioni per le voci cambiate durante l'invio). Provata in Chrome headless con un Bilanci API finto (25 controlli), più le prove di Inserisci e delle altezze.
 - **25/11/2026** – Inserisci si adatta all'altezza utile dello schermo (sul telefono le barre del browser la riducono): la cornice prende lo spazio che resta, sotto 820 px si stringono margini, icone e tastierino del pannello e sparisce il suggerimento. Provato in Chrome headless da 892 a 680 px di altezza: niente scorrimento.
 - **25/11/2026** – Inserisci, Nuova spesa e coda offline provati dall'utente con il vero Bilanci API: funzionano.
