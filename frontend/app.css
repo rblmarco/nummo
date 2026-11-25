@@ -227,6 +227,8 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
   animation: sale .22s ease-out;
 }
 @keyframes sale { from { transform: translateY(40px); opacity: 0; } }
+/* Le parti del pannello non si schiacciano mai: se non c'entrano si compatta (adattaPannello) o scorre */
+.pannello > * { flex-shrink: 0; }
 .maniglia { display: flex; justify-content: center; padding-bottom: 2px; }
 .maniglia span { width: 36px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .3); }
 .pannello-testa { display: flex; align-items: center; gap: 10px; }
@@ -590,5 +592,16 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
 .pannello.compatto .tastierino { gap: 6px; }
 .pannello.compatto .tasto { height: 44px; }
 .pannello.compatto .pulsante.pieno { height: 50px; }
+.pannello.compattissimo { gap: 8px; }
+.pannello.compattissimo .sel { height: 50px; }
+.pannello.compattissimo .sel-centro { height: 46px; padding-right: 18px; }
+.pannello.compattissimo .sel-icona { width: 32px; height: 32px; }
+.pannello.compattissimo .sel-icona .ms { font-size: 19px; }
+.pannello.compattissimo .sel-lato.l1 { height: 36px; }
+.pannello.compattissimo .sel-lato.l2 { height: 30px; }
+.pannello.compattissimo .importo { min-height: 46px; }
+.pannello.compattissimo .importo-num { font-size: 40px; line-height: 46px; }
+.pannello.compattissimo .campo { height: 44px; }
 .pannello.compattissimo .tasto { height: 40px; font-size: 22px; }
 .pannello.compattissimo .chip { height: 32px; }
+.pannello.compattissimo .pulsante.pieno { height: 48px; }
