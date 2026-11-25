@@ -442,3 +442,45 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
 .tasto .ms { font-size: 24px; }
 .tasto.op { color: var(--accento); background: rgba(125, 211, 192, .072); border: 1px solid rgba(125, 211, 192, .14); }
 .tasto:active { background: rgba(255, 255, 255, .14); }
+
+/* ---------- Inserisci e pannello senza scorrere ----------
+   Con le barre del browser lo schermo utile del telefono è più basso di 892 px:
+   la cornice prende l'altezza che resta e le righe si stringono, l'anello si adatta. */
+
+#s-inserisci:not([hidden]) {
+  display: flex; flex-direction: column;
+  height: calc(100dvh - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 560px;
+}
+#s-inserisci .cornice {
+  flex: 1 1 auto; min-height: 0;
+  grid-template-rows: repeat(4, minmax(86px, 120px));
+  align-content: center;
+}
+#s-inserisci .anello { min-height: 0; }
+#s-inserisci .anello-svg { width: auto; height: auto; max-width: 100%; max-height: min(224px, 100%); }
+#s-inserisci .suggerimento { flex-shrink: 0; }
+
+@media (max-height: 820px) {
+  #s-inserisci .suggerimento { display: none; }
+  .testa .titolo { padding-top: 12px; }
+  .capsula-sync { margin-top: 8px; }
+  .mese, .segmentato { margin-top: 8px; }
+  .cornice { padding-top: 10px; row-gap: 4px; }
+  .cella-icona { width: 44px; height: 44px; }
+  .cella-icona .ms { font-size: 22px; }
+
+  .pannello { gap: 10px; padding-bottom: 14px; }
+  .sel { height: 56px; }
+  .sel-centro { height: 52px; }
+  .sel-icona { width: 36px; height: 36px; }
+  .importo { min-height: 54px; padding: 0; }
+  .importo-num { font-size: 44px; line-height: 50px; }
+  .tastierino { gap: 6px; }
+  .tasto { height: 44px; }
+  .pulsante.pieno { height: 50px; }
+}
+@media (max-height: 740px) {
+  .tasto { height: 40px; font-size: 22px; }
+  .chip { height: 32px; }
+}
