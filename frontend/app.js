@@ -112,7 +112,15 @@
     return { tipo: p.tipo, da: p.da, a: p.a };
   }
 
+  /** Dimentica i periodi che non si erano potuti scaricare, così alla prossima richiesta si riprova */
+  function dimenticaErroriPeriodi() {
+    Object.keys(stato.periodi).forEach(function (k) {
+      if (stato.periodi[k] && stato.periodi[k].errore) delete stato.periodi[k];
+    });
+  }
+
   function impostaPeriodo(p) {
+    dimenticaErroriPeriodi();
     stato.periodo = p;
     limiteRighe = BLOCCO_RIGHE;
     localStorage.setItem(LS_PERIODO, JSON.stringify(p));
@@ -486,6 +494,7 @@
   /** Invia la coda e poi scarica categorie, conti, tag e movimenti recenti. Restituisce true se riuscito. */
   async function aggiorna(silenzioso) {
     if (!configurato(stato.config) || stato.occupato) return false;
+    dimenticaErroriPeriodi();
     await invia();
     stato.occupato = true;
     render();
@@ -724,7 +733,8 @@
         '<span class="anello-totale">' + euro(tot[stato.tipo]) + '</span>' +
         '<span class="anello-altro">' + altro + ' ' + euro(tot[stato.tipo === 'Entrata' ? 'Spesa' : 'Entrata']) + '</span>';
     } else if (movs && movs.errore) {
-      centro = '<span class="anello-etichetta">Periodo non disponibile</span><span class="anello-altro">' + esc(messaggioPeriodo(movs.errore)) + '</span>';
+      centro = '<span class="anello-etichetta">Periodo non disponibile</span><span class="anello-altro">' + esc(messaggioPeriodo(movs.errore)) + '</span>' +
+        '<button type="button" class="riprova" data-azione="riprova-periodo">Riprova</button>';
     } else {
       centro = '<span class="anello-etichetta">Carico il periodo…</span>';
     }
@@ -847,7 +857,8 @@
     }
 
     if (movs === 'carico') html += '<div class="segnaposto vetro">Carico i movimenti del periodo…</div>';
-    else if (movs && movs.errore) html += '<div class="segnaposto vetro">Periodo non disponibile: ' + esc(messaggioPeriodo(movs.errore)) + '.</div>';
+    else if (movs && movs.errore) html += '<div class="segnaposto vetro">Periodo non disponibile: ' + esc(messaggioPeriodo(movs.errore)) + '.' +
+      '<div class="riga-pulsante" style="padding:12px 0 0"><button type="button" class="pulsante tinto-accento" data-azione="riprova-periodo">Riprova</button></div></div>';
     else {
       const lista = filtra(movs).sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
       const giorni = [];
@@ -1567,6 +1578,7 @@
       else eliminaMovimento(el.dataset.id);
     }
     else if (a === 'invia') invia();
+    else if (a === 'riprova-periodo') { dimenticaErroriPeriodi(); render(); }
     else if (a === 'mostra-altri') { limiteRighe += BLOCCO_RIGHE; renderListaMovimenti(); }
     else if (a === 'periodo') apriPeriodo();
     else if (a === 'periodo-sposta') impostaPeriodo(spostaPeriodo(stato.periodo, +el.dataset.passo));

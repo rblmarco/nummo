@@ -391,6 +391,7 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
 .anello-totale { font: 600 26px/32px var(--font); letter-spacing: -.3px; white-space: nowrap; }
 .anello-altro { font: 400 13px/16px var(--font); color: var(--t2); }
 
+.riprova { margin-top: 6px; height: 30px; padding: 0 14px; border-radius: 15px; background: rgba(125, 211, 192, .156); color: var(--accento); font: 600 13px/16px var(--font); pointer-events: auto; }
 .suggerimento { margin: 14px 0 0; text-align: center; font: 400 13px/18px var(--font); color: var(--t3); }
 
 /* ---------- Pannello Nuova spesa ---------- */
