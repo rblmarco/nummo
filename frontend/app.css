@@ -10,6 +10,9 @@
   --attesa: #E8C36A;
   --linea: rgba(255, 255, 255, .08);
   --font: Inter, system-ui, sans-serif;
+  /* Bordi occupati da barra di stato e barra di navigazione (app installata da bordo a bordo) */
+  --sa-t: env(safe-area-inset-top, 0px);
+  --sa-b: env(safe-area-inset-bottom, 0px);
 }
 
 * { box-sizing: border-box; }
@@ -79,14 +82,14 @@ html, body { height: 100%; overflow: hidden; }
   max-width: 560px;
   height: 100%;
   margin: 0 auto;
-  padding: env(safe-area-inset-top) 16px 0 16px;
+  padding: var(--sa-t) 16px 0 16px;
 }
 .schermo:not([hidden]) { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .fisso { flex-shrink: 0; }
 .scorre {
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overscroll-behavior: contain;
-  margin: 0 -16px; padding: 0 16px calc(112px + env(safe-area-inset-bottom));
+  margin: 0 -16px; padding: 0 16px calc(112px + var(--sa-b));
   scrollbar-width: none;
 }
 .scorre::-webkit-scrollbar { display: none; }
@@ -104,7 +107,7 @@ html, body { height: 100%; overflow: hidden; }
 .barra {
   position: fixed;
   left: 20px; right: 20px;
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  bottom: calc(24px + var(--sa-b));
   max-width: 520px;
   margin: 0 auto;
   height: 64px;
@@ -208,10 +211,10 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
 .pannello {
   position: fixed;
   left: 6px; right: 6px;
-  bottom: calc(6px + env(safe-area-inset-bottom));
+  bottom: calc(6px + var(--sa-b));
   max-width: 548px;
   margin: 0 auto;
-  max-height: calc(100dvh - 40px);
+  max-height: calc(100dvh - 20px - var(--sa-t) - var(--sa-b));
   overflow-y: auto;
   border-radius: 34px;
   padding: 8px 16px 18px;
@@ -288,7 +291,7 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
 .avviso {
   position: fixed;
   left: 50%;
-  bottom: calc(100px + env(safe-area-inset-bottom));
+  bottom: calc(100px + var(--sa-b));
   transform: translateX(-50%);
   max-width: calc(100% - 40px);
   padding: 10px 16px;
@@ -561,34 +564,31 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
 
 #s-inserisci .scorre { display: flex; flex-direction: column; }
 #s-inserisci .cornice {
-  flex: 1 0 auto;
-  grid-template-rows: repeat(4, minmax(86px, 120px));
-  align-content: center;
+  flex: 0 1 auto; min-height: 0;
+  grid-template-rows: repeat(4, minmax(80px, 120px));
 }
 #s-inserisci .anello { min-height: 0; }
 #s-inserisci .anello-svg { width: auto; height: auto; max-width: 100%; max-height: min(224px, 100%); }
 #s-inserisci .suggerimento { flex-shrink: 0; }
 
-@media (max-height: 820px) {
-  #s-inserisci .suggerimento { display: none; }
-  .testa .titolo { padding-top: 12px; }
-  .capsula-sync { margin-top: 8px; }
-  .mese, .segmentato { margin-top: 8px; }
+/* Spazio stretto, misurato sull'area utile di Inserisci (non sull'altezza dello schermo) */
+#s-inserisci .scorre { container-type: size; container-name: inserisci; }
+@container inserisci (max-height: 490px) {
+  .suggerimento { display: none; }
   .cornice { padding-top: 10px; row-gap: 4px; }
   .cella-icona { width: 44px; height: 44px; }
   .cella-icona .ms { font-size: 22px; }
+}
 
-  .pannello { gap: 10px; padding-bottom: 14px; }
-  .sel { height: 56px; }
-  .sel-centro { height: 52px; }
-  .sel-icona { width: 36px; height: 36px; }
-  .importo { min-height: 54px; padding: 0; }
-  .importo-num { font-size: 44px; line-height: 50px; }
-  .tastierino { gap: 6px; }
-  .tasto { height: 44px; }
-  .pulsante.pieno { height: 50px; }
-}
-@media (max-height: 740px) {
-  .tasto { height: 40px; font-size: 22px; }
-  .chip { height: 32px; }
-}
+/* Pannello compatto: lo attiva app.js solo se il contenuto non ci sta */
+.pannello.compatto { gap: 10px; padding-bottom: 14px; }
+.pannello.compatto .sel { height: 56px; }
+.pannello.compatto .sel-centro { height: 52px; }
+.pannello.compatto .sel-icona { width: 36px; height: 36px; }
+.pannello.compatto .importo { min-height: 54px; padding: 0; }
+.pannello.compatto .importo-num { font-size: 44px; line-height: 50px; }
+.pannello.compatto .tastierino { gap: 6px; }
+.pannello.compatto .tasto { height: 44px; }
+.pannello.compatto .pulsante.pieno { height: 50px; }
+.pannello.compattissimo .tasto { height: 40px; font-size: 22px; }
+.pannello.compattissimo .chip { height: 32px; }

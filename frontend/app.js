@@ -890,7 +890,18 @@
     $('#scrim').hidden = false;
     document.body.style.overflow = 'hidden';
     chiudiPannelloCb = onChiudi || null;
+    adattaPannello();
   }
+
+  /** Se il pannello non ci sta nello schermo, lo compatta (prima un po', poi di più). */
+  function adattaPannello() {
+    const p = $('#pannello');
+    if (p.hidden) return;
+    p.classList.remove('compatto', 'compattissimo');
+    if (p.scrollHeight > p.clientHeight + 1) p.classList.add('compatto');
+    if (p.scrollHeight > p.clientHeight + 1) p.classList.add('compattissimo');
+  }
+  window.addEventListener('resize', adattaPannello);
 
   function chiudiPannello() {
     $('#pannello').hidden = true;
