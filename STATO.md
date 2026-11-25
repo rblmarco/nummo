@@ -1,8 +1,8 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (4)
+Ultimo aggiornamento: 25/11/2026 (5)
 
-**Fase attuale**: backend e app pubblicati e collegati (Impostazioni e lettura dati provate con il vero Bilanci API). Prossimo passo: schermata Inserisci.
+**Fase attuale**: Inserisci, pannello Nuova spesa e coda offline scritti e provati con un Bilanci API finto. Prossimo passo: prova sul telefono con il vero Bilanci API, poi schermata Movimenti.
 
 ## Da dove riprendere
 
@@ -10,7 +10,8 @@ Ultimo aggiornamento: 25/11/2026 (4)
 2. **App pubblicata** su GitHub Pages e collegata a Bilanci API (foglio `Dati nummo (prova)`). Su un nuovo dispositivo: aprire l'app e compilare il pannello Collegamento.
 3. **Modificare `pages.yml`** richiede un token GitHub con il permesso Workflows (fine-grained) o `workflow` (classic).
 4. **Confermare o correggere** le tre scelte "Da confermare (Impostazioni)" nei Punti aperti.
-5. **Passo successivo di sviluppo**: schermata **Inserisci** (anello del mese e categorie in cornice 5×4), vedi `docs/design_v3.md` e `docs/design/LGInserisci.dc.html`. I dati servono già tutti: arrivano da `bootstrap` e sono in `stato.dati` in `frontend/app.js` (funzioni `macroCategorie()` e `movimentiDivisi()`).
+5. **Da provare sul telefono**: inserire qualche spesa vera (scrive in `Dati nummo (prova)`), controllare le righe nel foglio (data `dd/mm/yy`, `Macro (Sub)`, importo, nota con i tag, colonne ID / INSERITO_IL / FONTE), provare in modalità aereo e il contatore "In attesa".
+6. **Passo successivo di sviluppo**: schermata **Movimenti** (`docs/design/LGMovimenti.dc.html`). In `frontend/app.js` ci sono già `movimentiTutti()` (bootstrap + coda) e `movimentiDivisi()` (effettivi / in programma); `update` e `delete` passano dalla stessa coda (`stato.coda`, store IndexedDB `coda`).
 
 ## Fatto
 
@@ -39,9 +40,10 @@ Ultimo aggiornamento: 25/11/2026 (4)
 - [x] Impostazioni: indirizzo e chiave, test del collegamento (provato solo con un Bilanci API finto)
 - [x] Lettura dati: categorie, conti, tag, movimenti recenti, copia in IndexedDB (provato solo con un Bilanci API finto)
 - [x] Prova di Impostazioni e bootstrap con il vero Bilanci API (19 categorie, 69 sottocategorie, 4 conti, 5 tag)
-- [ ] Inserisci: anello del mese e categorie in cornice
-- [ ] Pannello Nuova spesa: selettore sottocategoria, importo, nota, tag, tastierino, data
-- [ ] Salvataggio locale e coda offline (IndexedDB), invio in background
+- [x] Inserisci: anello del mese e categorie in cornice, mesi precedenti, Spesa / Entrata (provato solo con un Bilanci API finto)
+- [x] Pannello Nuova spesa: selettori sottocategoria e conto, importo, nota, tag, tastierino con operazioni, data anche futura (provato solo con un Bilanci API finto)
+- [x] Salvataggio locale e coda offline (IndexedDB), invio in background, contatore "In attesa" (provato solo con un Bilanci API finto)
+- [ ] Prova di Inserisci e del salvataggio sul telefono con il vero Bilanci API
 - [ ] Movimenti: lista per giorno, In programma, modifica, duplica, elimina, ricerca e filtri
 - [x] PWA: manifest e icone (anello sfumato con la n, sorgente `frontend/icons/icona.svg`)
 - [ ] PWA: service worker (uso offline) e prova di installazione sul telefono
@@ -67,9 +69,16 @@ Ultimo aggiornamento: 25/11/2026 (4)
 | 24/11/2026 | Frontend nella cartella `frontend/`, pubblicato su GitHub Pages con un workflow di GitHub Actions (senza build) |
 | 24/11/2026 | Durante la prova in parallelo nummo scrive in "Dati nummo (prova)", per evitare doppioni con l'import di 1Money |
 | 24/11/2026 | Niente trasferimenti tra conti; un solo conto di spesa, sempre preselezionato; selettore del conto nascosto se c'è un solo conto |
+| 25/11/2026 | Inserisci: in modalità Entrata le categorie di entrata occupano la cornice dall'alto e l'anello mostra le entrate; titolo, pulsante e suggerimento diventano "Entrate" / "Salva entrata". Categorie oltre la 14ª in righe da 5 sotto la cornice |
+| 25/11/2026 | Capsula di sincronizzazione: Sincronizzato, N in attesa (ambra), Offline, Non collegato, Invio…; un tocco invia la coda e aggiorna dal foglio |
+| 25/11/2026 | Mesi: freccia avanti fino al mese in corso; date future escluse da anello e importi; i mesi fuori dal bootstrap (circa 3 mesi) si scaricano con l'azione `mese` e servono la rete |
+| 25/11/2026 | Data proposta nel pannello: oggi nel mese in corso, l'ultimo giorno del mese quando si guarda un mese passato; data futura evidenziata in accento |
+| 25/11/2026 | Sottocategoria sempre obbligatoria (si propone la prima); tag salvati in coda alla nota, nell'ordine del foglio Tag |
+| 25/11/2026 | Tastierino: massimo 2 decimali, risultato del calcolo mostrato sotto l'importo; importo zero o negativo non si salva. Selettori: trascinamento (una voce ogni circa 80 px) o tocco sulle voci laterali; con 2 voci si vede solo quella a destra |
 
 ## Registro
 
+- **25/11/2026** – Inserisci (anello, cornice 5×4, mese, Spesa / Entrata, capsula di sincronizzazione), pannello Nuova spesa e coda offline in `frontend/app.js` e `frontend/app.css`; `Api.invia` (POST con ops) in `frontend/api.js`. IndexedDB alla versione 2 con lo store `coda`. Provati in Chrome headless a 412×892 con un Bilanci API finto: salvataggio, calcoli, tag, data futura, offline con ricarica e invio al ritorno della rete, mesi vecchi, trascinamento dei selettori.
 - **25/11/2026** – Icona dell'app scelta (anello sfumato con i colori delle categorie e la n al centro): `frontend/icons/`, `frontend/manifest.webmanifest`, collegamenti in `index.html`.
 - **25/11/2026** – App pubblicata su GitHub Pages con il nuovo workflow; Impostazioni e bootstrap provati con il vero Bilanci API.
 - **25/11/2026** – Workflow `pages.yml` fallito ("No artifacts named github-pages"): diviso in due job, prepara e pubblica, e aggiornate le azioni (`checkout@v5`, `upload-pages-artifact@v4`).

@@ -57,9 +57,8 @@ Il repository è pubblico e tutto ciò che sta in `frontend/` è pubblicato: nie
 | --- | --- |
 | `index.html` | struttura della pagina: tre schermate, barra in basso, pannello dal basso |
 | `app.css` | stile v3 "vetro" (`docs/design_v3.md`) |
-| `app.js` | interfaccia, stato, copia locale dei dati in IndexedDB |
-| `api.js` | chiamate a Bilanci API (`ping`, `bootstrap`, `mese`) |
-
+| `app.js` | interfaccia, stato, copia locale dei dati e coda offline in IndexedDB |
+| `api.js` | chiamate a Bilanci API: lettura (`ping`, `bootstrap`, `mese`) e scrittura (`invia`, POST con le operazioni `add` / `update` / `delete`) |
 | `manifest.webmanifest` | nome, colori e icone usati da "Aggiungi a schermata Home" |
 | `icons/` | icone PNG (192, 512, 180 per iOS, 32 per il browser) e sorgente `icona.svg` |
 
