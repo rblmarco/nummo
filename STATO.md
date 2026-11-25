@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (14)
+Ultimo aggiornamento: 25/11/2026 (15)
 
 **Fase attuale**: Movimenti scritta e provata con un Bilanci API finto (lista, In programma, modifica, duplica, elimina, ricerca, filtri, coda offline per update e delete). Prossimo passo: prova di Movimenti sul telefono, poi service worker.
 
@@ -9,8 +9,9 @@ Ultimo aggiornamento: 25/11/2026 (14)
 1. **Su un altro PC**: `git pull` (o clona il repo). Indirizzo e chiave di Bilanci API non sono nel repo: tienili a portata (URL `/exec` del deployment e `API_KEY` dalle proprietà dello script).
 2. **App pubblicata** su GitHub Pages e collegata a Bilanci API (foglio `Dati nummo (prova)`). Su un nuovo dispositivo: aprire l'app e compilare il pannello Collegamento.
 3. **Modificare `pages.yml`** richiede un token GitHub con il permesso Workflows (fine-grained) o `workflow` (classic).
-4. **Da provare sul telefono**: in Movimenti modificare, duplicare ed eliminare qualche riga del foglio `Dati nummo (prova)` e controllare nel foglio che `update` aggiorni la riga giusta (con MODIFICATO_IL) e `delete` la tolga; provare anche in modalità aereo.
-5. **Passo successivo di sviluppo**: service worker `frontend/sw.js` (l'app si apre senza rete) e prova di installazione sul telefono.
+4. **Bilanci API da aggiornare**: `backend/Code.gs` ha la nuova lettura `periodo`. Va incollato nel progetto Apps Script, poi Gestisci deployment → matita → Nuova versione. Finché non lo fai, anno, settimana, giorno, intervallo e tutto il periodo più vecchi di circa 3 mesi mostrano "Aggiorna Bilanci API".
+5. **Da provare sul telefono**: in Movimenti modificare, duplicare ed eliminare qualche riga del foglio `Dati nummo (prova)` e controllare nel foglio che `update` aggiorni la riga giusta (con MODIFICATO_IL) e `delete` la tolga; provare anche in modalità aereo.
+6. **Passo successivo di sviluppo**: service worker `frontend/sw.js` (l'app si apre senza rete) e prova di installazione sul telefono.
 
 ## Fatto
 
@@ -46,6 +47,8 @@ Ultimo aggiornamento: 25/11/2026 (14)
 - [x] Movimenti: lista per giorno, In programma, avviso in attesa con Invia ora, modifica (anche della categoria), duplica, elimina, ricerca e filtri mese / categoria / conto (provato solo con un Bilanci API finto)
 - [x] Coda offline anche per `update` e `delete`: una sola voce per ID; un movimento mai inviato modificato resta un `add`, eliminato sparisce dalla coda (provato solo con un Bilanci API finto)
 - [ ] Prova di Movimenti sul telefono con il vero Bilanci API
+- [x] Periodo come in 1Money, uno solo per Inserisci e Movimenti: intervallo, tutto il periodo, giorno, settimana, oggi, anno, mese; frecce, memoria dell'ultimo periodo, lettura `periodo` in Bilanci API (provato solo con un Bilanci API finto)
+- [ ] Aggiornare Bilanci API (nuova versione del deployment) e provare i periodi sul telefono
 - [x] PWA: manifest e icone (anello sfumato con la n, sorgente `frontend/icons/icona.svg`)
 - [ ] PWA: service worker (uso offline) e prova di installazione sul telefono
 
@@ -84,10 +87,13 @@ Ultimo aggiornamento: 25/11/2026 (14)
 | 25/11/2026 | Categorie, sottocategorie e conti non più attivi: righe in grigio in Movimenti, restano scelti in modifica finché non li cambi, contano nei totali di Inserisci con un segmento grigio; movimenti vecchi senza sottocategoria mostrano "Nessuna". Filtri: ultimi 24 mesi, tutte le categorie, conti di spesa più quelli del mese; la ricerca vale sul mese scelto. Righe senza ID (storiche, prima di `assegnaID()`) visibili ma non modificabili |
 | 25/11/2026 | La pagina non scorre mai: ogni schermata ha una parte fissa (Inserisci: titolo, mese, Spesa / Entrata; Movimenti: titolo, ricerca, filtri; Impostazioni: titolo) e sotto un'area che scorre solo se il contenuto non ci sta |
 | 25/11/2026 | La parte in alto di ogni schermata (`.testata`) galleggia come la barra in basso: vetro sfocato che sfuma verso il basso, il contenuto le scorre sotto invece di essere tagliato di netto; copre anche la barra di stato |
+| 25/11/2026 | Periodo come in 1Money al posto del solo mese: un solo periodo per Inserisci (etichetta tra le frecce) e Movimenti (primo filtro), stesso pannello con 7 voci; alla riapertura resta l'ultimo scelto ("Oggi" è sempre il giorno corrente). Settimana da lunedì a domenica; frecce per mese, anno, settimana e giorno, spente per intervallo e tutto il periodo, avanti fino al periodo che contiene oggi. Dal pannello mese, anno e settimana partono da quelli in corso |
+| 25/11/2026 | Periodi più vecchi di circa 3 mesi: si scaricano con `mese` o `periodo` e restano sul dispositivo (tranne "Tutto il periodo"); Movimenti mostra 300 righe alla volta con "Mostra altri movimenti"; In programma compare quando il periodo arriva fino a oggi; nuova spesa con data = oggi se il periodo lo contiene, altrimenti il suo ultimo giorno |
 | 25/11/2026 | Investimenti: si registreranno in nummo come trasferimenti (voce "Sposta"), come in 1Money; sostituisce "niente trasferimenti tra conti" del 24/11. Si fa dopo la fine dell'app principale |
 
 ## Registro
 
+- **25/11/2026** – Periodo come in 1Money: `stato.periodo` salvato in `localStorage` (`nummo.periodo`), pannello Periodo, frecce, `movimentiDelPeriodo()` e `caricaPeriodo()` al posto di quelli per mese; Movimenti senza il filtro mese. Bilanci API: nuova azione `periodo` (`da`, `a`), descritta in `README-BE.md`. Provato in Chrome headless con un Bilanci API finto (25 controlli sui periodi, più tutte le prove precedenti) e la funzione `movimentiPeriodo_` con Node.
 - **25/11/2026** – Testata galleggiante in tutte le schermate: `.testata` in posizione assoluta sopra `.scorre`, che occupa tutta la schermata e parte da sotto la testata grazie a `--testata-h` (misurata con un `ResizeObserver`). Provato in Chrome headless simulando il Galaxy A54, più le prove precedenti.
 - **25/11/2026** – Corretto il pannello in modifica sul telefono: con tre selettori il contenuto non ci stava e il selettore Categoria veniva schiacciato sotto la Sottocategoria. Ora le parti del pannello non si schiacciano mai; se non c'entrano il pannello si compatta in due livelli (`compatto`, `compattissimo`) e solo come ultima risorsa scorre. Provato simulando il Galaxy A54 con uno e due conti, Chrome a 780 e 700 px.
 - **25/11/2026** – Correzione del layout sul telefono: con l'app installata la pagina va da bordo a bordo e l'altezza dello schermo comprende barra di stato e barra di navigazione, quindi le misure basate sull'altezza dello schermo (`@media max-height`) mettevano la cornice troppo in basso. Ora Inserisci si adatta all'area utile (cornice che si stringe, container query sull'area che scorre), i bordi di sistema sono in `--sa-t` / `--sa-b`, il pannello si compatta da solo solo se non ci sta (`adattaPannello()`). Provato in Chrome headless simulando il Galaxy A54 (891 px con barre di 26 e 48 px, o 24 px con i gesti), Chrome a 780 px e 720 px: niente scorrimento e niente sotto la barra.

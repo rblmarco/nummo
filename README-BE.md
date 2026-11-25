@@ -42,6 +42,7 @@ Apri nel browser `<URL>/exec?action=ping&key=<CHIAVE>`. Deve rispondere con `{"o
 | GET | `action=ping&key=…` | stato e foglio in uso |
 | GET | `action=bootstrap&key=…` | categorie attive, conti, tag, movimenti degli ultimi 92 giorni e futuri |
 | GET | `action=mese&ym=AAAA-MM&key=…` | movimenti di un mese |
+| GET | `action=periodo&da=AAAA-MM-GG&a=AAAA-MM-GG&key=…` | movimenti tra due date comprese (periodi dell'app: anno, settimana, intervallo, tutto il periodo) |
 | POST | corpo `text/plain` con JSON `{key, ops:[{op:'add'|'update'|'delete', id, mov}]}` | esito di ogni operazione |
 
 `mov` = `{data:'AAAA-MM-GG', tipo:'Spesa'|'Entrata', conto, categoria, sottocategoria, importo, nota}`. Le chiavi non vanno mai scritte nel codice dell'app: si inseriscono nelle Impostazioni al primo avvio.

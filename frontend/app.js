@@ -82,6 +82,83 @@
     };
   })();
 
+  /* ---------- Periodo (come in 1Money: uno solo per Inserisci e Movimenti) ---------- */
+  // tipo: 'mese', 'anno', 'settimana' (lunedì–domenica), 'giorno', 'oggi', 'tutto', 'intervallo'.
+  // L'ultimo periodo scelto resta salvato sul dispositivo; "Oggi" vale sempre per il giorno in cui si apre l'app.
+
+  const LS_PERIODO = 'nummo.periodo';
+  const TUTTO = { da: '0000-01-01', a: '9999-12-31' };
+
+  function periodoDi(tipo, rif) {
+    const d = dataDa(rif || isoOggi());
+    const y = d.getFullYear(), m = d.getMonth();
+    if (tipo === 'mese') return { tipo: tipo, da: isoDa(new Date(y, m, 1)), a: isoDa(new Date(y, m + 1, 0)) };
+    if (tipo === 'anno') return { tipo: tipo, da: y + '-01-01', a: y + '-12-31' };
+    if (tipo === 'settimana') {
+      const lun = new Date(y, m, d.getDate() - ((d.getDay() + 6) % 7));
+      return { tipo: tipo, da: isoDa(lun), a: isoDa(new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + 6)) };
+    }
+    if (tipo === 'giorno' || tipo === 'oggi') return { tipo: tipo, da: isoDa(d), a: isoDa(d) };
+    if (tipo === 'tutto') return { tipo: tipo, da: TUTTO.da, a: TUTTO.a };
+    return null;
+  }
+
+  function leggiPeriodo() {
+    let p = null;
+    try { p = JSON.parse(localStorage.getItem(LS_PERIODO) || 'null'); } catch (e) { p = null; }
+    if (!p || !p.tipo) return periodoDi('mese');
+    if (p.tipo === 'oggi' || p.tipo === 'tutto') return periodoDi(p.tipo);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.da) || !/^\d{4}-\d{2}-\d{2}$/.test(p.a)) return periodoDi('mese');
+    return { tipo: p.tipo, da: p.da, a: p.a };
+  }
+
+  function impostaPeriodo(p) {
+    stato.periodo = p;
+    limiteRighe = BLOCCO_RIGHE;
+    localStorage.setItem(LS_PERIODO, JSON.stringify(p));
+    const lista = document.getElementById('mov-lista');
+    if (lista) lista.scrollTop = 0;
+    render();
+  }
+
+  /** Sposta il periodo avanti o indietro di una unità (mese, anno, settimana, giorno). */
+  function spostaPeriodo(p, n) {
+    const d = dataDa(p.da);
+    if (p.tipo === 'mese') return periodoDi('mese', isoDa(new Date(d.getFullYear(), d.getMonth() + n, 1)));
+    if (p.tipo === 'anno') return periodoDi('anno', (d.getFullYear() + n) + '-01-01');
+    if (p.tipo === 'settimana') return periodoDi('settimana', isoDa(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7 * n)));
+    if (p.tipo === 'giorno' || p.tipo === 'oggi') {
+      const g = periodoDi('giorno', isoDa(new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)));
+      return g.da === isoOggi() ? periodoDi('oggi') : g;
+    }
+    return p;
+  }
+  function periodoSpostabile(p) { return p.tipo !== 'tutto' && p.tipo !== 'intervallo'; }
+  /** Avanti si ferma al periodo che contiene oggi */
+  function puoAvanzare(p) { return periodoSpostabile(p) && p.a < isoOggi(); }
+  function contieneOggi(p) { const o = isoOggi(); return p.da <= o && p.a >= o; }
+
+  /** "Novembre 2026", "Anno 2026", "23 – 29 nov", "Mer 25 nov", "Oggi, 25 nov", "Tutto il periodo", "1 set – 25 nov 2026" */
+  function etichettaPeriodo(p) {
+    const breve = function (iso, conAnno) {
+      const d = dataDa(iso);
+      return d.getDate() + ' ' + MESI[d.getMonth()] + (conAnno ? ' ' + d.getFullYear() : '');
+    };
+    if (p.tipo === 'mese') return nomeMese(p.da.slice(0, 7));
+    if (p.tipo === 'anno') return 'Anno ' + p.da.slice(0, 4);
+    if (p.tipo === 'tutto') return 'Tutto il periodo';
+    if (p.tipo === 'oggi') return 'Oggi, ' + breve(p.da);
+    if (p.tipo === 'giorno') return etichettaData(p.da);
+    const annoOggi = isoOggi().slice(0, 4);
+    const altroAnno = p.da.slice(0, 4) !== annoOggi || p.a.slice(0, 4) !== annoOggi;
+    if (p.tipo === 'settimana') {
+      const stessoMese = p.da.slice(0, 7) === p.a.slice(0, 7);
+      return (stessoMese ? dataDa(p.da).getDate() : breve(p.da)) + ' – ' + breve(p.a, altroAnno);
+    }
+    if (p.da === p.a) return breve(p.da, altroAnno);
+    return breve(p.da, p.da.slice(0, 4) !== p.a.slice(0, 4)) + ' – ' + breve(p.a, true);
+  }
+
   /* ---------- Stato ---------- */
 
   const stato = {
@@ -92,10 +169,10 @@
     occupato: false,       // bootstrap in corso
     inviando: false,       // invio della coda in corso
     coda: [],              // copia in memoria dello store "coda"
-    mesi: {},              // movimenti dei mesi fuori dal bootstrap: { 'AAAA-MM': [..] | 'carico' | 'errore' }
-    ym: null,              // mese mostrato in Inserisci (AAAA-MM)
+    periodi: {},           // movimenti dei periodi fuori dal bootstrap: { chiave: [..] | 'carico' | { errore } }
+    periodo: leggiPeriodo(), // periodo mostrato in Inserisci e Movimenti: { tipo, da, a } (date AAAA-MM-GG)
     tipo: 'Spesa',         // interruttore Spesa / Entrata
-    filtri: { ym: null, cat: null, conto: null, testo: '' }, // filtri di Movimenti
+    filtri: { cat: null, conto: null, testo: '' }, // filtri di Movimenti
     tab: 'impostazioni'
   };
 
@@ -246,46 +323,62 @@
     };
   }
 
-  /** true se il mese è tutto dentro la finestra del bootstrap */
-  function meseNelBootstrap(ym) {
-    if (!stato.dati) return false;
-    const base = dataDa(stato.dati.oggi || isoOggi());
-    const da = isoDa(new Date(base.getFullYear(), base.getMonth(), base.getDate() - GIORNI_RECENTI));
-    return ym + '-01' >= da;
+  /** Primo giorno coperto dal bootstrap */
+  function inizioBootstrap() {
+    const base = dataDa((stato.dati && stato.dati.oggi) || isoOggi());
+    return isoDa(new Date(base.getFullYear(), base.getMonth(), base.getDate() - GIORNI_RECENTI));
   }
+
+  function chiavePeriodo(p) { return p.tipo === 'mese' ? 'm:' + p.da.slice(0, 7) : 'p:' + p.da + '|' + p.a; }
 
   /**
-   * Movimenti effettivi di un mese (escluse le date future).
-   * Restituisce un array, oppure 'carico' / 'errore' per i mesi da chiedere a Bilanci API.
+   * Movimenti effettivi del periodo (esclusi quelli con data futura), compresi quelli in coda.
+   * Restituisce un array, oppure 'carico' / { errore } per i periodi da chiedere a Bilanci API.
    */
-  function movimentiDelMese(ym) {
+  function movimentiDelPeriodo(p) {
     const oggi = isoOggi();
+    const dentro = function (x) { return x.data >= p.da && x.data <= p.a; };
     let lista;
-    if (meseNelBootstrap(ym)) {
+    if (stato.dati && p.da >= inizioBootstrap()) {
       lista = movimentiTutti();
     } else {
-      const m = stato.mesi[ym];
+      const m = stato.periodi[chiavePeriodo(p)];
       if (!Array.isArray(m)) return m || 'carico';
-      lista = applicaCoda(m, function (v) { return v.mov.data.slice(0, 7) === ym; });
+      lista = applicaCoda(m, function (v) { return dentro(v.mov); });
     }
-    return lista.filter(function (x) { return x.data.slice(0, 7) === ym && x.data <= oggi; });
+    return lista.filter(function (x) { return dentro(x) && x.data <= oggi; });
   }
 
-  async function caricaMese(ym) {
-    if (stato.mesi[ym] === 'carico' || Array.isArray(stato.mesi[ym])) return;
-    stato.mesi[ym] = 'carico';
+  /** Scarica da Bilanci API i movimenti di un periodo più vecchio del bootstrap (con copia sul dispositivo). */
+  async function caricaPeriodo(p) {
+    const k = chiavePeriodo(p);
+    if (stato.periodi[k] === 'carico' || Array.isArray(stato.periodi[k])) return;
+    stato.periodi[k] = 'carico';
     try {
-      const c = await Db.get('mese:' + ym);
-      if (c) { stato.mesi[ym] = c; render(); }
+      const c = await Db.get('periodo:' + k);
+      if (c) { stato.periodi[k] = c; render(); }
     } catch (e) { /* niente copia locale */ }
     try {
-      const r = await Api.mese(stato.config, ym);
-      stato.mesi[ym] = r.movimenti || [];
-      Db.set('mese:' + ym, stato.mesi[ym]).catch(function () {});
+      const r = p.tipo === 'mese' ? await Api.mese(stato.config, p.da.slice(0, 7)) : await Api.periodo(stato.config, p.da, p.a);
+      stato.periodi[k] = r.movimenti || [];
+      // "Tutto il periodo" può essere grande: non lo si copia sul dispositivo
+      if (p.tipo !== 'tutto') Db.set('periodo:' + k, stato.periodi[k]).catch(function () {});
     } catch (err) {
-      if (!Array.isArray(stato.mesi[ym])) stato.mesi[ym] = 'errore';
+      if (!Array.isArray(stato.periodi[k])) stato.periodi[k] = { errore: err.message };
     }
     render();
+  }
+
+  /** Messaggio per un periodo che non si è potuto scaricare */
+  function messaggioPeriodo(err) {
+    if (/Azione sconosciuta/.test(err)) return 'Aggiorna Bilanci API (nuova versione del deployment)';
+    return navigator.onLine === false ? 'Serve la rete per i periodi più vecchi' : err;
+  }
+
+  function statoPeriodo(p) {
+    const movs = movimentiDelPeriodo(p);
+    if (movs === 'carico' && stato.periodi[chiavePeriodo(p)] === undefined) caricaPeriodo(p);
+    return movs;
   }
 
   /* ---------- Sincronizzazione ---------- */
@@ -354,10 +447,11 @@
       stato.dati.movimenti = nuova(stato.dati.movimenti || []);
       Db.set('bootstrap', { dati: stato.dati, quando: stato.ultimaSync }).catch(function () {});
     }
-    Object.keys(stato.mesi).forEach(function (ym) {
-      if (!Array.isArray(stato.mesi[ym])) return;
-      stato.mesi[ym] = togli(stato.mesi[ym]);
-      if (v.op !== 'delete' && m.data.slice(0, 7) === ym) stato.mesi[ym].push(m);
+    Object.keys(stato.periodi).forEach(function (k) {
+      if (!Array.isArray(stato.periodi[k])) return;
+      stato.periodi[k] = togli(stato.periodi[k]);
+      const p = k.slice(0, 2) === 'm:' ? { da: k.slice(2) + '-01', a: k.slice(2) + '-31' } : { da: k.slice(2).split('|')[0], a: k.slice(2).split('|')[1] };
+      if (v.op !== 'delete' && m.data >= p.da && m.data <= p.a) stato.periodi[k].push(m);
     });
   }
 
@@ -403,7 +497,7 @@
       };
       stato.dati = dati;
       stato.ultimaSync = Date.now();
-      stato.mesi = {};
+      stato.periodi = {};
       await Db.set('bootstrap', { dati: dati, quando: stato.ultimaSync });
       registraEsito(true, 'Collegato');
       if (!silenzioso) avviso(stato.coda.length ? 'Dati aggiornati · ' + stato.coda.length + ' in attesa di invio' : 'Dati aggiornati dal foglio');
@@ -535,6 +629,13 @@
     $('#s-impostazioni').innerHTML = html;
   }
 
+  /** Riga del periodo, uguale in Inserisci e Movimenti: frecce e etichetta che apre il pannello Periodo */
+  function rigaPeriodo(per) {
+    return '<button type="button" class="tondo-40 vetro-leggero" data-azione="periodo-sposta" data-passo="-1" aria-label="Periodo precedente"' + (periodoSpostabile(per) ? '' : ' disabled') + '><span class="ms" aria-hidden="true">chevron_left</span></button>' +
+      '<button type="button" class="mese-nome capsula-periodo" data-azione="periodo">' + esc(etichettaPeriodo(per)) + '<span class="ms" aria-hidden="true">expand_more</span></button>' +
+      '<button type="button" class="tondo-40 vetro-leggero" data-azione="periodo-sposta" data-passo="1" aria-label="Periodo successivo"' + (puoAvanzare(per) ? '' : ' disabled') + '><span class="ms" aria-hidden="true">chevron_right</span></button>';
+  }
+
   /** Capsula in alto a destra: stato della sincronizzazione. Un tocco invia la coda e aggiorna. */
   function capsulaSync() {
     const n = stato.coda.length;
@@ -586,11 +687,8 @@
       return;
     }
 
-    if (!stato.ym) stato.ym = ymOggi();
-    const ym = stato.ym;
-    const ultimo = ym >= ymOggi();
-    const movs = movimentiDelMese(ym);
-    if (movs === 'carico' && stato.mesi[ym] === undefined) caricaMese(ym);
+    const per = stato.periodo;
+    const movs = statoPeriodo(per);
     const pronti = Array.isArray(movs);
 
     // Totali del mese per tipo e per categoria
@@ -625,17 +723,15 @@
       centro = '<span class="anello-etichetta">' + titolo + '</span>' +
         '<span class="anello-totale">' + euro(tot[stato.tipo]) + '</span>' +
         '<span class="anello-altro">' + altro + ' ' + euro(tot[stato.tipo === 'Entrata' ? 'Spesa' : 'Entrata']) + '</span>';
-    } else if (movs === 'errore') {
-      centro = '<span class="anello-etichetta">Mese non disponibile</span><span class="anello-altro">Serve la rete per i mesi più vecchi</span>';
+    } else if (movs && movs.errore) {
+      centro = '<span class="anello-etichetta">Periodo non disponibile</span><span class="anello-altro">' + esc(messaggioPeriodo(movs.errore)) + '</span>';
     } else {
-      centro = '<span class="anello-etichetta">Carico il mese…</span>';
+      centro = '<span class="anello-etichetta">Carico il periodo…</span>';
     }
 
     $('#s-inserisci').innerHTML = '<div class="testata">' + testa +
       '<div class="mese">' +
-        '<button type="button" class="tondo-40 vetro-leggero" data-azione="mese" data-passo="-1" aria-label="Mese precedente"><span class="ms" aria-hidden="true">chevron_left</span></button>' +
-        '<span class="mese-nome">' + nomeMese(ym) + '</span>' +
-        '<button type="button" class="tondo-40 vetro-leggero" data-azione="mese" data-passo="1" aria-label="Mese successivo"' + (ultimo ? ' disabled' : '') + '><span class="ms" aria-hidden="true">chevron_right</span></button>' +
+        rigaPeriodo(per) +
       '</div>' +
       '<div class="segmentato vetro-leggero" role="tablist">' +
         ['Spesa', 'Entrata'].map(function (t) {
@@ -718,12 +814,14 @@
       '<div class="mov-gruppo ' + classe + '">' + righe + '</div>';
   }
 
+  const BLOCCO_RIGHE = 300;
+  let limiteRighe = BLOCCO_RIGHE;
+
   function renderListaMovimenti() {
     const el = document.getElementById('mov-lista');
     if (!el) return;
-    const ym = stato.filtri.ym;
-    const movs = movimentiDelMese(ym);
-    if (movs === 'carico' && stato.mesi[ym] === undefined) caricaMese(ym);
+    const per = stato.periodo;
+    const movs = statoPeriodo(per);
     let html = '';
 
     // Avviso dei movimenti in attesa
@@ -738,8 +836,8 @@
       '</div>';
     }
 
-    // In programma: tutte le date future, solo guardando il mese in corso
-    if (ym === ymOggi()) {
+    // In programma: tutte le date future, quando il periodo mostrato arriva fino a oggi
+    if (per.a >= isoOggi()) {
       const fut = filtra(movimentiDivisi().inProgramma).sort(function (a, b) { return a.data < b.data ? -1 : a.data > b.data ? 1 : 0; });
       if (fut.length) {
         const tot = fut.reduce(function (t, m) { return t + segnato(m); }, 0);
@@ -748,8 +846,8 @@
       }
     }
 
-    if (movs === 'carico') html += '<div class="segnaposto vetro">Carico i movimenti del mese…</div>';
-    else if (movs === 'errore') html += '<div class="segnaposto vetro">Questo mese non è in memoria: serve la rete per scaricarlo.</div>';
+    if (movs === 'carico') html += '<div class="segnaposto vetro">Carico i movimenti del periodo…</div>';
+    else if (movs && movs.errore) html += '<div class="segnaposto vetro">Periodo non disponibile: ' + esc(messaggioPeriodo(movs.errore)) + '.</div>';
     else {
       const lista = filtra(movs).sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
       const giorni = [];
@@ -757,13 +855,19 @@
         const g = giorni[giorni.length - 1];
         if (g && g.data === m.data) g.m.push(m); else giorni.push({ data: m.data, m: [m] });
       });
-      giorni.forEach(function (g) {
+      // Periodi lunghi (anno, tutto il periodo): si disegnano le righe a blocchi
+      let righe = 0, tagliato = false;
+      giorni.some(function (g) {
+        if (righe >= limiteRighe) { tagliato = true; return true; }
         const tot = g.m.reduce(function (t, m) { return t + segnato(m); }, 0);
         html += htmlGruppo(titoloGiorno(g.data), tot, g.m.map(function (m) { return htmlRigaMov(m, false); }).join(''), 'vetro');
+        righe += g.m.length;
+        return false;
       });
+      if (tagliato) html += '<div class="riga-pulsante"><button type="button" class="pulsante vetro-leggero" data-azione="mostra-altri">Mostra altri movimenti (' + (lista.length - righe) + ')</button></div>';
       if (!giorni.length) {
         const filtrato = stato.filtri.cat || stato.filtri.conto || stato.filtri.testo.trim();
-        html += '<div class="segnaposto vetro">' + (filtrato ? 'Nessun movimento con questi filtri.' : 'Nessun movimento in ' + nomeMese(ym).toLowerCase() + '.') + '</div>';
+        html += '<div class="segnaposto vetro">' + (filtrato ? 'Nessun movimento con questi filtri.' : 'Nessun movimento in questo periodo.') + '</div>';
       } else {
         html += '<p class="suggerimento">Tocca per modificare · scorri per duplicare o eliminare</p>';
       }
@@ -784,7 +888,6 @@
       return;
     }
     const f = stato.filtri;
-    if (!f.ym) f.ym = ymOggi();
     const cerca = document.getElementById('mov-cerca');
     // Se la ricerca è già sullo schermo non la si ridisegna (si perderebbe il fuoco)
     if (!cerca) {
@@ -795,7 +898,7 @@
         '<div class="scorre" id="mov-lista"></div>';
     }
     document.getElementById('mov-filtri').innerHTML =
-      chipFiltro('filtro-mese', nomeMese(f.ym), true) +
+      chipFiltro('periodo', etichettaPeriodo(stato.periodo), true) +
       chipFiltro('filtro-cat', f.cat || 'Categoria', !!f.cat) +
       chipFiltro('filtro-conto', f.conto || 'Conto', !!f.conto);
     renderListaMovimenti();
@@ -805,8 +908,8 @@
   function trovaMovimento(id) {
     const tutti = movimentiTutti();
     let m = tutti.find(function (x) { return x.id === id; });
-    if (!m) Object.keys(stato.mesi).some(function (ym) {
-      if (Array.isArray(stato.mesi[ym])) m = applicaCoda(stato.mesi[ym]).find(function (x) { return x.id === id; });
+    if (!m) Object.keys(stato.periodi).some(function (k) {
+      if (Array.isArray(stato.periodi[k])) m = applicaCoda(stato.periodi[k]).find(function (x) { return x.id === id; });
       return !!m;
     });
     return m || null;
@@ -816,15 +919,6 @@
     return '<button type="button" class="voce voce-scelta" data-azione="' + azione + '" data-valore="' + esc(valore) + '">' +
       '<span class="voce-testo"><span class="voce-titolo">' + esc(testo) + '</span>' + (sotto ? '<span class="voce-sotto">' + esc(sotto) + '</span>' : '') + '</span>' +
       (scelto ? '<span class="ms" aria-hidden="true" style="color:var(--accento)">check</span>' : '') + '</button>';
-  }
-
-  function apriFiltroMese() {
-    let voci = '';
-    for (let i = 0; i < 24; i++) {
-      const ym = ymSposta(ymOggi(), -i);
-      voci += voceScelta('scegli-mese', ym, nomeMese(ym), null, ym === stato.filtri.ym);
-    }
-    apriPannello(testaPannello('calendar_month', 'Mese') + '<div class="lista vetro">' + voci + '</div>');
   }
 
   function apriFiltroCat() {
@@ -841,11 +935,68 @@
   function apriFiltroConto() {
     const nomi = [];
     contiSpesa().forEach(function (c) { nomi.push(c.nome); });
-    const movs = movimentiDelMese(stato.filtri.ym);
+    const movs = movimentiDelPeriodo(stato.periodo);
     if (Array.isArray(movs)) movs.forEach(function (m) { if (m.conto && nomi.indexOf(m.conto) < 0) nomi.push(m.conto); });
     apriPannello(testaPannello('account_balance_wallet', 'Conto') + '<div class="lista vetro">' +
       voceScelta('scegli-conto', '', 'Tutti i conti', null, !stato.filtri.conto) +
       nomi.map(function (n) { return voceScelta('scegli-conto', n, n, null, stato.filtri.conto === n); }).join('') + '</div>');
+  }
+
+  /* ---------- Pannello Periodo ---------- */
+
+  function tesseraPeriodo(o) {
+    const scelta = o.scelta ? ' scelta' : ' vetro-leggero';
+    const simbolo = o.numero
+      ? '<span class="periodo-numero">' + o.numero + '</span>'
+      : '<span class="ms" aria-hidden="true">' + o.icona + '</span>';
+    const dentro = simbolo + '<span class="periodo-nome">' + esc(o.nome) + '</span>' + (o.sotto ? '<span class="periodo-sotto">' + esc(o.sotto) + '</span>' : '');
+    if (o.input) return '<label class="tessera' + scelta + (o.largo ? ' larga' : '') + '">' + dentro + o.input + '</label>';
+    return '<button type="button" class="tessera' + scelta + (o.largo ? ' larga' : '') + '" data-azione="' + o.azione + '"' + (o.tipo ? ' data-tipo="' + o.tipo + '"' : '') + '>' + dentro + '</button>';
+  }
+
+  function apriPeriodo() {
+    const p = stato.periodo;
+    const oggi = isoOggi();
+    const sett = periodoDi('settimana'), mese = periodoDi('mese'), anno = periodoDi('anno');
+    const dOggi = dataDa(oggi);
+    apriPannello(
+      '<div class="pannello-testa"><span class="nome periodo-titolo">Periodo</span>' +
+        '<button type="button" class="tondo vetro-leggero" data-azione="chiudi" aria-label="Chiudi"><span class="ms" aria-hidden="true">close</span></button></div>' +
+      '<div class="tessere">' +
+        tesseraPeriodo({ azione: 'periodo-intervallo', icona: 'more_horiz', nome: "Seleziona l'intervallo", sotto: p.tipo === 'intervallo' ? etichettaPeriodo(p) : null, scelta: p.tipo === 'intervallo', largo: true }) +
+        tesseraPeriodo({ azione: 'scegli-periodo', tipo: 'tutto', icona: 'all_inclusive', nome: 'Tutto il periodo', scelta: p.tipo === 'tutto' }) +
+        tesseraPeriodo({ icona: 'calendar_month', nome: 'Seleziona un giorno', sotto: p.tipo === 'giorno' ? etichettaPeriodo(p) : null, scelta: p.tipo === 'giorno',
+          input: '<input type="date" id="periodo-giorno-input" value="' + (p.tipo === 'giorno' ? p.da : oggi) + '" aria-label="Seleziona un giorno">' }) +
+        tesseraPeriodo({ azione: 'scegli-periodo', tipo: 'settimana', numero: '7', nome: 'Settimana', sotto: etichettaPeriodo(sett), scelta: p.tipo === 'settimana' }) +
+        tesseraPeriodo({ azione: 'scegli-periodo', tipo: 'oggi', numero: '1', nome: 'Oggi', sotto: dOggi.getDate() + ' ' + MESI_LUNGHI[dOggi.getMonth()].toLowerCase(), scelta: p.tipo === 'oggi' }) +
+        tesseraPeriodo({ azione: 'scegli-periodo', tipo: 'anno', numero: '365', nome: 'Anno', sotto: etichettaPeriodo(anno), scelta: p.tipo === 'anno' }) +
+        tesseraPeriodo({ azione: 'scegli-periodo', tipo: 'mese', numero: '30', nome: 'Mese', sotto: etichettaPeriodo(mese), scelta: p.tipo === 'mese' }) +
+      '</div>'
+    );
+  }
+
+  function apriIntervallo() {
+    const p = stato.periodo;
+    const da = p.tipo === 'tutto' ? isoDa(new Date(dataDa(isoOggi()).getFullYear(), 0, 1)) : p.da;
+    const a = p.tipo === 'tutto' ? isoOggi() : p.a;
+    apriPannello(
+      testaPannello('date_range', 'Intervallo') +
+      '<span class="campo-etichetta">Dal</span>' +
+      '<label class="campo vetro"><span class="ms" aria-hidden="true">event</span><span class="sr">Dal</span><input id="int-da" type="date" value="' + da + '"></label>' +
+      '<span class="campo-etichetta">Al</span>' +
+      '<label class="campo vetro"><span class="ms" aria-hidden="true">event</span><span class="sr">Al</span><input id="int-a" type="date" value="' + a + '"></label>' +
+      '<div id="int-esito" class="esito errore" hidden></div>' +
+      '<button type="button" class="pulsante pieno" data-azione="applica-intervallo"><span class="ms" aria-hidden="true">check</span>Applica</button>'
+    );
+  }
+
+  function applicaIntervallo() {
+    const da = $('#int-da').value, a = $('#int-a').value;
+    const e = $('#int-esito');
+    if (!da || !a) { e.hidden = false; e.innerHTML = '<span class="ms f" aria-hidden="true">error</span><span>Scegli le due date</span>'; return; }
+    if (da > a) { e.hidden = false; e.innerHTML = '<span class="ms f" aria-hidden="true">error</span><span>La prima data deve venire prima della seconda</span>'; return; }
+    chiudiPannello();
+    impostaPeriodo({ tipo: 'intervallo', da: da, a: a });
   }
 
   /* Scorrimento delle righe: verso sinistra mostra Duplica ed Elimina. */
@@ -1240,8 +1391,9 @@
 
   /** Pannello per una spesa nuova da Inserisci */
   function apriNuovo(nomeCat) {
-    // Data proposta: oggi se si guarda il mese in corso, altrimenti l'ultimo giorno del mese mostrato
-    const data = (!stato.ym || stato.ym === ymOggi()) ? isoOggi() : isoDa(new Date(+stato.ym.slice(0, 4), +stato.ym.slice(5, 7), 0));
+    // Data proposta: oggi se il periodo mostrato contiene oggi, altrimenti il suo ultimo giorno
+    const per = stato.periodo;
+    const data = contieneOggi(per) || per.a > isoOggi() ? isoOggi() : per.a;
     apriMovimento({ modo: 'nuovo', tipo: stato.tipo, categoria: nomeCat, data: data });
   }
 
@@ -1415,18 +1567,24 @@
       else eliminaMovimento(el.dataset.id);
     }
     else if (a === 'invia') invia();
-    else if (a === 'filtro-mese') apriFiltroMese();
+    else if (a === 'mostra-altri') { limiteRighe += BLOCCO_RIGHE; renderListaMovimenti(); }
+    else if (a === 'periodo') apriPeriodo();
+    else if (a === 'periodo-sposta') impostaPeriodo(spostaPeriodo(stato.periodo, +el.dataset.passo));
+    else if (a === 'scegli-periodo') { chiudiPannello(); impostaPeriodo(periodoDi(el.dataset.tipo)); }
+    else if (a === 'periodo-giorno') apriGiorno();
+    else if (a === 'periodo-intervallo') apriIntervallo();
+    else if (a === 'applica-intervallo') applicaIntervallo();
     else if (a === 'filtro-cat') apriFiltroCat();
     else if (a === 'filtro-conto') apriFiltroConto();
-    else if (a === 'scegli-mese' || a === 'scegli-cat' || a === 'scegli-conto') {
-      const k = { 'scegli-mese': 'ym', 'scegli-cat': 'cat', 'scegli-conto': 'conto' }[a];
+    else if (a === 'scegli-cat' || a === 'scegli-conto') {
+      const k = { 'scegli-cat': 'cat', 'scegli-conto': 'conto' }[a];
       stato.filtri[k] = el.dataset.valore || null;
+      limiteRighe = BLOCCO_RIGHE;
       chiudiPannello();
       render();
       const lista = document.getElementById('mov-lista');
       if (lista) lista.scrollTop = 0;
     }
-    else if (a === 'mese') { stato.ym = ymSposta(stato.ym || ymOggi(), +el.dataset.passo); if (stato.ym > ymOggi()) stato.ym = ymOggi(); render(); }
     else if (a === 'tipo') { stato.tipo = el.dataset.tipo; render(); }
     else if (a === 'scorri') scorriSelettore(el.dataset.sel, +el.dataset.passo);
     else if (a === 'tag' && ns) {
@@ -1451,13 +1609,20 @@
 
   // Data del movimento: il campo data è invisibile sopra la capsula; sul PC si apre il calendario con showPicker
   document.addEventListener('change', function (ev) {
+    if (ev.target.id === 'periodo-giorno-input' && ev.target.value) {
+      const g = ev.target.value === isoOggi() ? periodoDi('oggi') : periodoDi('giorno', ev.target.value);
+      if (ev.target.value !== isoOggi()) g.tipo = 'giorno';
+      chiudiPannello();
+      impostaPeriodo(g);
+      return;
+    }
     if (ev.target.id === 'ns-data-input' && ns) {
       if (ev.target.value) ns.data = ev.target.value; else ev.target.value = ns.data;
       renderData();
     }
   });
   document.addEventListener('click', function (ev) {
-    const inp = ev.target.id === 'ns-data-input' ? ev.target : null;
+    const inp = /^(ns-data-input|periodo-giorno-input|int-da|int-a)$/.test(ev.target.id) ? ev.target : null;
     if (inp && inp.showPicker) { try { inp.showPicker(); } catch (e) { /* già aperto */ } }
   });
   document.addEventListener('keydown', function (ev) {

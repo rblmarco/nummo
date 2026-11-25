@@ -1,6 +1,6 @@
 /**
  * nummo – chiamate a Bilanci API.
- * Lettura con GET (ping, bootstrap, mese), scrittura con POST (ops add / update / delete).
+ * Lettura con GET (ping, bootstrap, mese, periodo), scrittura con POST (ops add / update / delete).
  * Indirizzo e chiave arrivano da localStorage (impostati nella schermata Impostazioni):
  * nel codice non c'è nessun indirizzo né chiave.
  */
@@ -70,6 +70,8 @@ const Api = (function () {
     bootstrap: function (cfg) { return get(cfg, { action: 'bootstrap' }); },
     /** Movimenti di un mese (AAAA-MM) */
     mese: function (cfg, ym) { return get(cfg, { action: 'mese', ym: ym }); },
+    /** Movimenti tra due date comprese (AAAA-MM-GG) */
+    periodo: function (cfg, da, a) { return get(cfg, { action: 'periodo', da: da, a: a }); },
     /** Invia operazioni add / update / delete: { risultati: [{ id, ok, errore? }] } */
     invia: function (cfg, ops) { return post(cfg, { ops: ops }); }
   };

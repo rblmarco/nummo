@@ -30,6 +30,7 @@ function doGet(e) {
     if (p.action === 'ping') return { ping: 'ok', foglio: nomeFoglioDati_() };
     if (p.action === 'bootstrap') return bootstrap_();
     if (p.action === 'mese') return { movimenti: movimentiMese_(p.ym) };
+    if (p.action === 'periodo') return { movimenti: movimentiPeriodo_(p.da, p.a) };
     throw new Error('Azione sconosciuta: ' + p.action);
   });
 }
@@ -65,6 +66,17 @@ function bootstrap_() {
     tag: leggiTag_(ss),
     movimenti: leggiMovimenti_(function (d) { return chiaveData_(d) >= daKey; })
   };
+}
+
+/** Movimenti tra due date comprese (AAAA-MM-GG); per "tutto il periodo" l'app manda 0000-01-01 e 9999-12-31 */
+function movimentiPeriodo_(da, a) {
+  const re = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const x = re.exec(String(da || '')), y = re.exec(String(a || ''));
+  if (!x || !y) throw new Error('Periodo non valido: usa da=AAAA-MM-GG e a=AAAA-MM-GG');
+  const kDa = Number(x[1]) * 10000 + Number(x[2]) * 100 + Number(x[3]);
+  const kA = Number(y[1]) * 10000 + Number(y[2]) * 100 + Number(y[3]);
+  if (kDa > kA) throw new Error('Periodo non valido: la prima data viene dopo la seconda');
+  return leggiMovimenti_(function (d) { const k = chiaveData_(d); return k >= kDa && k <= kA; });
 }
 
 function movimentiMese_(ym) {
