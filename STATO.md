@@ -69,6 +69,7 @@ Ultimo aggiornamento: 25/11/2026 (3)
 
 ## Registro
 
+- **25/11/2026** – Workflow `pages.yml` fallito ("No artifacts named github-pages"): diviso in due job, prepara e pubblica, e aggiornate le azioni (`checkout@v5`, `upload-pages-artifact@v4`).
 - **25/11/2026** – Aggiunta la sezione "Da dove riprendere".
 - **25/11/2026** – README nella radice: `README.md` (presentazione), `README-BE.md` (era `backend/README.md`), `README-FE.md` (era `frontend/README.md`).
 - **25/11/2026** – Scritto `frontend/README.md`: attivazione di GitHub Pages, primo avvio, prova in locale, workflow `pages.yml`.

@@ -44,10 +44,10 @@ Basta il push su `main`: il workflow ripubblica l'app in un paio di minuti. Part
 | --- | --- |
 | Quando parte | push su `main` che tocca `frontend/**` o il workflow; a mano con **Run workflow** |
 | Cosa pubblica | la cartella `frontend/`, senza trasformarla |
-| Passi | `checkout` → `configure-pages` → `upload-pages-artifact` (path `frontend`) → `deploy-pages` |
+| Passi | job **prepara**: `checkout` → `configure-pages` → `upload-pages-artifact` (path `frontend`); job **pubblica** (parte dopo prepara): `deploy-pages` |
 | Permessi | `contents: read`, `pages: write`, `id-token: write` |
 | Ambiente | `github-pages`: l'indirizzo pubblicato compare nel riepilogo dell'esecuzione |
-| Concorrenza | gruppo `pages`: una pubblicazione nuova annulla quella ancora in corso |
+| Concorrenza | gruppo `pages`: una pubblicazione nuova aspetta che finisca quella in corso |
 
 Il repository è pubblico e tutto ciò che sta in `frontend/` è pubblicato: niente dati personali, URL di Bilanci API o chiavi.
 
