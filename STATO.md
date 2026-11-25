@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (13)
+Ultimo aggiornamento: 25/11/2026 (14)
 
 **Fase attuale**: Movimenti scritta e provata con un Bilanci API finto (lista, In programma, modifica, duplica, elimina, ricerca, filtri, coda offline per update e delete). Prossimo passo: prova di Movimenti sul telefono, poi service worker.
 
@@ -83,10 +83,12 @@ Ultimo aggiornamento: 25/11/2026 (13)
 | 25/11/2026 | Movimenti: tocco = modifica nello stesso pannello con in più il selettore Categoria ("Salva modifiche"); Duplica apre il pannello compilato con la data di oggi; Elimina chiede un secondo tocco su "Conferma" |
 | 25/11/2026 | Categorie, sottocategorie e conti non più attivi: righe in grigio in Movimenti, restano scelti in modifica finché non li cambi, contano nei totali di Inserisci con un segmento grigio; movimenti vecchi senza sottocategoria mostrano "Nessuna". Filtri: ultimi 24 mesi, tutte le categorie, conti di spesa più quelli del mese; la ricerca vale sul mese scelto. Righe senza ID (storiche, prima di `assegnaID()`) visibili ma non modificabili |
 | 25/11/2026 | La pagina non scorre mai: ogni schermata ha una parte fissa (Inserisci: titolo, mese, Spesa / Entrata; Movimenti: titolo, ricerca, filtri; Impostazioni: titolo) e sotto un'area che scorre solo se il contenuto non ci sta |
+| 25/11/2026 | La parte in alto di ogni schermata (`.testata`) galleggia come la barra in basso: vetro sfocato che sfuma verso il basso, il contenuto le scorre sotto invece di essere tagliato di netto; copre anche la barra di stato |
 | 25/11/2026 | Investimenti: si registreranno in nummo come trasferimenti (voce "Sposta"), come in 1Money; sostituisce "niente trasferimenti tra conti" del 24/11. Si fa dopo la fine dell'app principale |
 
 ## Registro
 
+- **25/11/2026** – Testata galleggiante in tutte le schermate: `.testata` in posizione assoluta sopra `.scorre`, che occupa tutta la schermata e parte da sotto la testata grazie a `--testata-h` (misurata con un `ResizeObserver`). Provato in Chrome headless simulando il Galaxy A54, più le prove precedenti.
 - **25/11/2026** – Corretto il pannello in modifica sul telefono: con tre selettori il contenuto non ci stava e il selettore Categoria veniva schiacciato sotto la Sottocategoria. Ora le parti del pannello non si schiacciano mai; se non c'entrano il pannello si compatta in due livelli (`compatto`, `compattissimo`) e solo come ultima risorsa scorre. Provato simulando il Galaxy A54 con uno e due conti, Chrome a 780 e 700 px.
 - **25/11/2026** – Correzione del layout sul telefono: con l'app installata la pagina va da bordo a bordo e l'altezza dello schermo comprende barra di stato e barra di navigazione, quindi le misure basate sull'altezza dello schermo (`@media max-height`) mettevano la cornice troppo in basso. Ora Inserisci si adatta all'area utile (cornice che si stringe, container query sull'area che scorre), i bordi di sistema sono in `--sa-t` / `--sa-b`, il pannello si compatta da solo solo se non ci sta (`adattaPannello()`). Provato in Chrome headless simulando il Galaxy A54 (891 px con barre di 26 e 48 px, o 24 px con i gesti), Chrome a 780 px e 720 px: niente scorrimento e niente sotto la barra.
 - **25/11/2026** – Struttura delle schermate: `html` e `body` non scorrono, ogni schermata è una colonna con parti `.fisso` e un'area `.scorre` che lascia libero lo spazio della barra in basso. Provato in Chrome headless a 892, 780 e 700 px: Inserisci non scorre fino a circa 720 px (sotto scorre solo la cornice), con più di 14 categorie scorre solo la cornice, in Movimenti ricerca e filtri restano fermi.

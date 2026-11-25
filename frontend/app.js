@@ -438,7 +438,30 @@
     if (stato.tab === 'impostazioni') renderImpostazioni();
     if (stato.tab === 'inserisci') renderInserisci();
     if (stato.tab === 'movimenti') renderMovimenti();
+    osservaTestata();
   }
+
+  /*
+   * La parte in alto (.testata) galleggia sopra l'area che scorre, come la barra in basso:
+   * l'area che scorre parte da sotto la testata grazie a --testata-h, aggiornata quando la testata cambia altezza.
+   */
+  const osservatore = 'ResizeObserver' in window ? new ResizeObserver(function (voci) {
+    voci.forEach(function (v) {
+      const schermo = v.target.closest('.schermo');
+      if (schermo) schermo.style.setProperty('--testata-h', v.target.offsetHeight + 'px');
+    });
+  }) : null;
+  function osservaTestata() {
+    const t = document.querySelector('.schermo:not([hidden]) .testata');
+    if (!t) return;
+    t.closest('.schermo').style.setProperty('--testata-h', t.offsetHeight + 'px');
+    if (osservatore && t !== testataOsservata) {
+      if (testataOsservata) osservatore.unobserve(testataOsservata);
+      testataOsservata = t;
+      osservatore.observe(t);
+    }
+  }
+  let testataOsservata = null;
 
   function riga(o) {
     const tag = o.azione ? 'button' : (o.href ? 'a' : 'div');
@@ -476,7 +499,7 @@
     const conto = contoPredefinito();
 
     const html =
-      '<h1 class="titolo fisso">Impostazioni</h1><div class="scorre">' +
+      '<div class="testata"><h1 class="titolo">Impostazioni</h1></div><div class="scorre">' +
 
       '<span class="gruppo-titolo">Collegamento</span>' +
       '<div class="gruppo vetro">' +
@@ -554,12 +577,12 @@
   function renderInserisci() {
     const d = stato.dati;
     const titolo = stato.tipo === 'Entrata' ? 'Entrate' : 'Spese';
-    const testa = '<div class="testa fisso"><h1 class="titolo">' + titolo + '</h1>' + (configurato(stato.config) ? capsulaSync() : '') + '</div>';
+    const testa = '<div class="testa"><h1 class="titolo">' + titolo + '</h1>' + (configurato(stato.config) ? capsulaSync() : '') + '</div>';
     if (!configurato(stato.config) || !d) {
       const corpo = !configurato(stato.config)
         ? 'Per iniziare collega l\'app a Bilanci API in <strong>Impostazioni</strong>.'
         : (stato.occupato ? 'Scarico i dati dal foglio…' : 'Nessun dato ancora: apri <strong>Impostazioni</strong> e premi Sincronizza ora.');
-      $('#s-inserisci').innerHTML = testa + '<div class="scorre"><div class="segnaposto vetro">' + corpo + '</div></div>';
+      $('#s-inserisci').innerHTML = '<div class="testata">' + testa + '</div><div class="scorre"><div class="segnaposto vetro">' + corpo + '</div></div>';
       return;
     }
 
@@ -608,17 +631,17 @@
       centro = '<span class="anello-etichetta">Carico il mese…</span>';
     }
 
-    $('#s-inserisci').innerHTML = testa +
-      '<div class="mese fisso">' +
+    $('#s-inserisci').innerHTML = '<div class="testata">' + testa +
+      '<div class="mese">' +
         '<button type="button" class="tondo-40 vetro-leggero" data-azione="mese" data-passo="-1" aria-label="Mese precedente"><span class="ms" aria-hidden="true">chevron_left</span></button>' +
         '<span class="mese-nome">' + nomeMese(ym) + '</span>' +
         '<button type="button" class="tondo-40 vetro-leggero" data-azione="mese" data-passo="1" aria-label="Mese successivo"' + (ultimo ? ' disabled' : '') + '><span class="ms" aria-hidden="true">chevron_right</span></button>' +
       '</div>' +
-      '<div class="segmentato vetro-leggero fisso" role="tablist">' +
+      '<div class="segmentato vetro-leggero" role="tablist">' +
         ['Spesa', 'Entrata'].map(function (t) {
           return '<button type="button" role="tab" data-azione="tipo" data-tipo="' + t + '" aria-selected="' + (stato.tipo === t) + '"' + (stato.tipo === t ? ' class="attivo"' : '') + '>' + t + '</button>';
         }).join('') +
-      '</div>' +
+      '</div></div>' +
       '<div class="scorre"><div class="cornice">' + celle +
         '<div class="anello">' + anello(segmenti, tot[stato.tipo]) + '<div class="anello-centro">' + centro + '</div></div>' +
       '</div>' +
@@ -756,7 +779,7 @@
   function renderMovimenti() {
     const d = stato.dati;
     if (!d) {
-      $('#s-movimenti').innerHTML = '<h1 class="titolo fisso">Movimenti</h1><div class="scorre"><div class="segnaposto vetro">' +
+      $('#s-movimenti').innerHTML = '<div class="testata"><h1 class="titolo">Movimenti</h1></div><div class="scorre"><div class="segnaposto vetro">' +
         (configurato(stato.config) ? 'Nessun movimento scaricato: apri <strong>Impostazioni</strong> e premi Sincronizza ora.' : 'Per iniziare collega l\'app a Bilanci API in <strong>Impostazioni</strong>.') + '</div></div>';
       return;
     }
@@ -765,10 +788,10 @@
     const cerca = document.getElementById('mov-cerca');
     // Se la ricerca è già sullo schermo non la si ridisegna (si perderebbe il fuoco)
     if (!cerca) {
-      $('#s-movimenti').innerHTML = '<h1 class="titolo mov-titolo-pagina fisso">Movimenti</h1>' +
-        '<label class="cerca vetro-leggero fisso"><span class="ms" aria-hidden="true">search</span><span class="sr">Cerca</span>' +
+      $('#s-movimenti').innerHTML = '<div class="testata"><h1 class="titolo mov-titolo-pagina">Movimenti</h1>' +
+        '<label class="cerca vetro-leggero"><span class="ms" aria-hidden="true">search</span><span class="sr">Cerca</span>' +
           '<input id="mov-cerca" type="search" autocomplete="off" enterkeyhint="search" placeholder="Cerca nelle note" value="' + esc(f.testo) + '"></label>' +
-        '<div class="filtri fisso" id="mov-filtri"></div>' +
+        '<div class="filtri" id="mov-filtri"></div></div>' +
         '<div class="scorre" id="mov-lista"></div>';
     }
     document.getElementById('mov-filtri').innerHTML =

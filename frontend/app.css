@@ -82,14 +82,25 @@ html, body { height: 100%; overflow: hidden; }
   max-width: 560px;
   height: 100%;
   margin: 0 auto;
-  padding: var(--sa-t) 16px 0 16px;
+  padding: 0 16px;
 }
-.schermo:not([hidden]) { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.fisso { flex-shrink: 0; }
+.schermo:not([hidden]) { display: block; position: relative; height: 100%; --testata-h: 0px; }
+
+/* Parte in alto che galleggia: vetro sfocato che sfuma verso il basso, sopra il contenuto che scorre.
+   Copre anche la barra di stato. */
+.testata {
+  position: absolute; top: 0; left: -16px; right: -16px; z-index: 5;
+  padding: var(--sa-t) 16px 14px;
+  background: linear-gradient(180deg, rgba(13, 15, 19, .55) 0, rgba(13, 15, 19, .35) 70%, rgba(13, 15, 19, 0) 100%);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 18px), transparent 100%);
+}
 .scorre {
-  flex: 1 1 auto; min-height: 0;
+  position: absolute; top: 0; bottom: 0; left: -16px; right: -16px;
   overflow-y: auto; overscroll-behavior: contain;
-  margin: 0 -16px; padding: 0 16px calc(112px + var(--sa-b));
+  padding: calc(var(--testata-h) - 14px) 16px calc(112px + var(--sa-b));
   scrollbar-width: none;
 }
 .scorre::-webkit-scrollbar { display: none; }
