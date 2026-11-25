@@ -65,6 +65,7 @@ Le righe storiche ricevono un ID una volta sola.
 Tre schermate dalla barra in basso (Inserisci, Movimenti, Impostazioni) più il pannello Nuova spesa che sale da Inserisci e da Movimenti. Stile: v3 dei mockup, vetro traslucido scuro e piatto. Dettagli grafici in `docs/design_v3.md`.
 
 - **Niente scorrimento inutile**: la pagina intera non scorre mai. Ogni schermata ha in alto una parte fissa che galleggia sul contenuto (vetro sfocato, come la barra in basso) e sotto un'area che scorre solo se il contenuto non ci sta.
+- **Tasto Indietro** (Android): se è aperto un pannello dal basso lo chiude; altrimenti torna alla schermata precedente.
 - **Area utile**: con l'app installata la pagina va da bordo a bordo; le misure si basano sullo spazio tra barra di stato e barra di navigazione, non sull'altezza dello schermo.
 
 ### 1. Inserisci
@@ -74,6 +75,7 @@ Tre schermate dalla barra in basso (Inserisci, Movimenti, Impostazioni) più il 
 - Attorno, in cornice 5 colonne × 4 righe, le categorie attive del tipo scelto con icona, nome e importo del periodo, nell'ordine della colonna Ordine del foglio Categorie: prima riga, lati, ultima riga. Le categorie di entrata occupano la cornice dall'alto. Oltre la 14ª: righe da 5 sotto la cornice, e solo allora la cornice scorre.
 - Le righe della cornice si stringono per stare nello spazio utile; la scritta "Tocca una categoria…" sparisce solo se lo spazio è poco.
 - Categorie non più attive: nessuna casella, ma i loro importi contano nel totale (segmento grigio nell'anello).
+- Un tocco al centro dell'anello passa da Spesa a Entrata e viceversa, come l'interruttore.
 - Un tocco su una categoria apre il pannello Nuova spesa. Data proposta: oggi se il periodo mostrato lo contiene, altrimenti il suo ultimo giorno.
 
 ### Periodo (Inserisci e Movimenti)

@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (18)
+Ultimo aggiornamento: 25/11/2026 (19)
 
 **Fase attuale**: Movimenti scritta e provata con un Bilanci API finto (lista, In programma, modifica, duplica, elimina, ricerca, filtri, coda offline per update e delete). Prossimo passo: prova di Movimenti sul telefono, poi service worker.
 
@@ -88,10 +88,12 @@ Ultimo aggiornamento: 25/11/2026 (18)
 | 25/11/2026 | La parte in alto di ogni schermata (`.testata`) galleggia come la barra in basso: vetro sfocato che sfuma verso il basso, il contenuto le scorre sotto invece di essere tagliato di netto; copre anche la barra di stato |
 | 25/11/2026 | Periodo come in 1Money al posto del solo mese: un solo periodo per Inserisci (etichetta tra le frecce) e Movimenti (primo filtro), stesso pannello con 7 voci; alla riapertura resta l'ultimo scelto ("Oggi" è sempre il giorno corrente). Settimana da lunedì a domenica; frecce per mese, anno, settimana e giorno, spente per intervallo e tutto il periodo, avanti fino al periodo che contiene oggi. Dal pannello mese, anno e settimana partono da quelli in corso |
 | 25/11/2026 | Periodi più vecchi di circa 3 mesi: si scaricano con `mese` o `periodo` e restano sul dispositivo (tranne "Tutto il periodo"); Movimenti mostra 300 righe alla volta con "Mostra altri movimenti"; In programma compare quando il periodo arriva fino a oggi; nuova spesa con data = oggi se il periodo lo contiene, altrimenti il suo ultimo giorno |
+| 25/11/2026 | Tasto Indietro di Android: chiude prima il pannello aperto (Nuova spesa, modifica, Periodo, Intervallo, filtri, Collegamento) e solo dopo cambia schermata. Un tocco al centro dell'anello passa da Spesa a Entrata e viceversa |
 | 25/11/2026 | Investimenti: si registreranno in nummo come trasferimenti (voce "Sposta"), come in 1Money; sostituisce "niente trasferimenti tra conti" del 24/11. Si fa dopo la fine dell'app principale |
 
 ## Registro
 
+- **25/11/2026** – Tasto Indietro: aprire un pannello aggiunge un passo alla cronologia (`history.pushState`), chiuderlo in qualunque modo lo toglie; un pannello che ne sostituisce un altro non aggiunge passi. Centro dell'anello cliccabile (`scambia-tipo`). Provato in Chrome headless (16 controlli, anche chiusura e apertura immediata), più tutte le prove precedenti.
 - **25/11/2026** – Bilanci API aggiornato (mancava la Nuova versione del deployment): i periodi funzionano sul telefono. Allineati i documenti di specifica alle decisioni di oggi: `docs/overview_funzionale.md` (periodo, schermate senza scorrimento, Nuova spesa, Movimenti, Impostazioni, coda, Liquidità definitivo, Sposta dopo l'app principale, nessun punto aperto), `docs/design_v3.md` (area utile, testata, riga e pannello Periodo, capsula di sincronizzazione, righe scorrevoli, pannello compatto), `CLAUDE.md` (azioni di lettura, periodo, layout); stesse modifiche nelle copie del progetto Claude.
 - **25/11/2026** – Periodi provati dall'utente: il pannello funziona, ma Anno risponde ancora "Aggiorna Bilanci API" (il deployment in uso non ha l'azione `periodo`). Corretto anche un difetto dell'app: un periodo non scaricato non veniva più richiesto fino alla riapertura; ora c'è il pulsante Riprova e si riprova a ogni cambio di periodo e a ogni sincronizzazione.
 - **25/11/2026** – Periodo come in 1Money: `stato.periodo` salvato in `localStorage` (`nummo.periodo`), pannello Periodo, frecce, `movimentiDelPeriodo()` e `caricaPeriodo()` al posto di quelli per mese; Movimenti senza il filtro mese. Bilanci API: nuova azione `periodo` (`da`, `a`), descritta in `README-BE.md`. Provato in Chrome headless con un Bilanci API finto (25 controlli sui periodi, più tutte le prove precedenti) e la funzione `movimentiPeriodo_` con Node.

@@ -749,7 +749,7 @@
         }).join('') +
       '</div></div>' +
       '<div class="scorre"><div class="cornice">' + celle +
-        '<div class="anello">' + anello(segmenti, tot[stato.tipo]) + '<div class="anello-centro">' + centro + '</div></div>' +
+        '<div class="anello">' + anello(segmenti, tot[stato.tipo]) + '<div class="anello-centro" role="button" tabindex="0" data-azione="scambia-tipo" aria-label="Passa a ' + (stato.tipo === 'Entrata' ? 'Spesa' : 'Entrata') + '">' + centro + '</div></div>' +
       '</div>' +
       '<p class="suggerimento">Tocca una categoria per registrare ' + (stato.tipo === 'Entrata' ? 'un\'entrata' : 'una spesa') + '</p></div>';
   }
@@ -1068,8 +1068,35 @@
 
   let chiudiPannelloCb = null;
 
+  /*
+   * Tasto Indietro (Android): aprire un pannello aggiunge un passo alla cronologia, così Indietro chiude il
+   * pannello invece di uscire dall'app. Un pannello che ne sostituisce un altro non aggiunge passi.
+   */
+  let passoPannello = false;   // c'è un passo nella cronologia per il pannello aperto
+  let ignoraPop = false;       // il prossimo popstate l'ha chiesto chiudiPannello: va ignorato
+
+  window.addEventListener('popstate', function () {
+    if (ignoraPop) {
+      ignoraPop = false;
+      // Un pannello aperto mentre si toglieva il passo del precedente: il suo passo si aggiunge adesso
+      if (!$('#pannello').hidden && !passoPannello) {
+        history.pushState({ nummoPannello: true }, '');
+        passoPannello = true;
+      }
+      return;
+    }
+    if (passoPannello && !$('#pannello').hidden) {
+      passoPannello = false;
+      chiudiPannello();
+    }
+  });
+
   function apriPannello(html, onChiudi) {
     const p = $('#pannello');
+    if (p.hidden && !passoPannello && !ignoraPop) {
+      history.pushState({ nummoPannello: true }, '');
+      passoPannello = true;
+    }
     p.innerHTML = '<div class="maniglia"><span></span></div>' + html;
     p.hidden = false;
     $('#scrim').hidden = false;
@@ -1095,6 +1122,12 @@
     document.body.style.overflow = '';
     const cb = chiudiPannelloCb; chiudiPannelloCb = null;
     if (cb) cb();
+    // Chiuso con X, sfondo, Salva o una scelta: si toglie il passo aggiunto alla cronologia
+    if (passoPannello) {
+      passoPannello = false;
+      ignoraPop = true;
+      history.back();
+    }
   }
 
   function testaPannello(icona, nome) {
@@ -1598,6 +1631,7 @@
       if (lista) lista.scrollTop = 0;
     }
     else if (a === 'tipo') { stato.tipo = el.dataset.tipo; render(); }
+    else if (a === 'scambia-tipo') { stato.tipo = stato.tipo === 'Entrata' ? 'Spesa' : 'Entrata'; render(); }
     else if (a === 'scorri') scorriSelettore(el.dataset.sel, +el.dataset.passo);
     else if (a === 'tag' && ns) {
       const t = el.dataset.tag;
