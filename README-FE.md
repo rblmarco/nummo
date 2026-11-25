@@ -60,4 +60,7 @@ Il repository è pubblico e tutto ciò che sta in `frontend/` è pubblicato: nie
 | `app.js` | interfaccia, stato, copia locale dei dati in IndexedDB |
 | `api.js` | chiamate a Bilanci API (`ping`, `bootstrap`, `mese`) |
 
-In arrivo: `sw.js` (uso offline), `manifest.webmanifest` e `icons/` per installare l'app con "Aggiungi a schermata Home".
+| `manifest.webmanifest` | nome, colori e icone usati da "Aggiungi a schermata Home" |
+| `icons/` | icone PNG (192, 512, 180 per iOS, 32 per il browser) e sorgente `icona.svg` |
+
+In arrivo: `sw.js` (uso offline).

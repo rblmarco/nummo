@@ -43,7 +43,8 @@ Ultimo aggiornamento: 25/11/2026 (4)
 - [ ] Pannello Nuova spesa: selettore sottocategoria, importo, nota, tag, tastierino, data
 - [ ] Salvataggio locale e coda offline (IndexedDB), invio in background
 - [ ] Movimenti: lista per giorno, In programma, modifica, duplica, elimina, ricerca e filtri
-- [ ] PWA: manifest, icone, service worker, installazione sul telefono
+- [x] PWA: manifest e icone (anello sfumato con la n, sorgente `frontend/icons/icona.svg`)
+- [ ] PWA: service worker (uso offline) e prova di installazione sul telefono
 
 ### 4. Messa in uso
 - [ ] Prova in parallelo a 1Money per qualche giorno
@@ -69,6 +70,7 @@ Ultimo aggiornamento: 25/11/2026 (4)
 
 ## Registro
 
+- **25/11/2026** – Icona dell'app scelta (anello sfumato con i colori delle categorie e la n al centro): `frontend/icons/`, `frontend/manifest.webmanifest`, collegamenti in `index.html`.
 - **25/11/2026** – App pubblicata su GitHub Pages con il nuovo workflow; Impostazioni e bootstrap provati con il vero Bilanci API.
 - **25/11/2026** – Workflow `pages.yml` fallito ("No artifacts named github-pages"): diviso in due job, prepara e pubblica, e aggiornate le azioni (`checkout@v5`, `upload-pages-artifact@v4`).
 - **25/11/2026** – Aggiunta la sezione "Da dove riprendere".
