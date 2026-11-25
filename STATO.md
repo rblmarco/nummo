@@ -1,16 +1,16 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (7)
+Ultimo aggiornamento: 25/11/2026 (10)
 
-**Fase attuale**: Inserisci, pannello Nuova spesa e coda offline funzionano anche sul telefono con il vero Bilanci API. Prossimo passo: schermata Movimenti.
+**Fase attuale**: Movimenti scritta e provata con un Bilanci API finto (lista, In programma, modifica, duplica, elimina, ricerca, filtri, coda offline per update e delete). Prossimo passo: prova di Movimenti sul telefono, poi service worker.
 
 ## Da dove riprendere
 
 1. **Su un altro PC**: `git pull` (o clona il repo). Indirizzo e chiave di Bilanci API non sono nel repo: tienili a portata (URL `/exec` del deployment e `API_KEY` dalle proprietà dello script).
 2. **App pubblicata** su GitHub Pages e collegata a Bilanci API (foglio `Dati nummo (prova)`). Su un nuovo dispositivo: aprire l'app e compilare il pannello Collegamento.
 3. **Modificare `pages.yml`** richiede un token GitHub con il permesso Workflows (fine-grained) o `workflow` (classic).
-4. **Confermare o correggere** le tre scelte "Da confermare (Impostazioni)" nei Punti aperti.
-5. **Passo successivo di sviluppo**: schermata **Movimenti** (`docs/design/LGMovimenti.dc.html`). In `frontend/app.js` ci sono già `movimentiTutti()` (bootstrap + coda) e `movimentiDivisi()` (effettivi / in programma); `update` e `delete` passano dalla stessa coda (`stato.coda`, store IndexedDB `coda`).
+4. **Da provare sul telefono**: in Movimenti modificare, duplicare ed eliminare qualche riga del foglio `Dati nummo (prova)` e controllare nel foglio che `update` aggiorni la riga giusta (con MODIFICATO_IL) e `delete` la tolga; provare anche in modalità aereo.
+5. **Passo successivo di sviluppo**: service worker `frontend/sw.js` (l'app si apre senza rete) e prova di installazione sul telefono.
 
 ## Fatto
 
@@ -43,7 +43,9 @@ Ultimo aggiornamento: 25/11/2026 (7)
 - [x] Pannello Nuova spesa: selettori sottocategoria e conto, importo, nota, tag, tastierino con operazioni, data anche futura (provato solo con un Bilanci API finto)
 - [x] Salvataggio locale e coda offline (IndexedDB), invio in background, contatore "In attesa" (provato solo con un Bilanci API finto)
 - [x] Prova di Inserisci e del salvataggio sul telefono con il vero Bilanci API
-- [ ] Movimenti: lista per giorno, In programma, modifica, duplica, elimina, ricerca e filtri
+- [x] Movimenti: lista per giorno, In programma, avviso in attesa con Invia ora, modifica (anche della categoria), duplica, elimina, ricerca e filtri mese / categoria / conto (provato solo con un Bilanci API finto)
+- [x] Coda offline anche per `update` e `delete`: una sola voce per ID; un movimento mai inviato modificato resta un `add`, eliminato sparisce dalla coda (provato solo con un Bilanci API finto)
+- [ ] Prova di Movimenti sul telefono con il vero Bilanci API
 - [x] PWA: manifest e icone (anello sfumato con la n, sorgente `frontend/icons/icona.svg`)
 - [ ] PWA: service worker (uso offline) e prova di installazione sul telefono
 
@@ -51,11 +53,12 @@ Ultimo aggiornamento: 25/11/2026 (7)
 - [ ] Prova in parallelo a 1Money per qualche giorno
 - [ ] Giorno di cambio: ultimo import da 1Money, poi solo nummo
 
+### 5. Dopo l'app principale
+- [ ] **Sposta**: terza voce Spesa / Entrata / Sposta per spostare soldi tra Liquidità e i conti di investimento, nei due sensi. Scrive una riga come 1Money: TIPOLOGIA `Trasferimento`, DAL CONTO, AL CONTO, importo, data, nota; niente categoria. La dashboard ignora i trasferimenti, quindi il risparmio non cambia. Serve: pannello semplificato (da conto, a conto, importo, data, nota) con anteprima prima del codice; Bilanci API che scrive e legge anche `Trasferimento`; spostamenti visibili in Movimenti
+
 ## Punti aperti
 
-- **Investimenti**: tipo "Investimento" nell'app (trasferimento da Liquidità al conto di investimento) oppure fuori dall'app? La dashboard ignora i trasferimenti, quindi registrarli non cambia il risparmio: serve solo a tenerne traccia.
-- **Nome del conto di spesa**: "Liquidità" è provvisorio.
-- **Da confermare (Impostazioni)**: indirizzo, chiave e indirizzo della dashboard si inseriscono in un pannello dal basso "Collegamento" (non disegnato nel design v3); gli errori sono mostrati in ambra, perché la palette non ha un rosso; la riga "Conto preselezionato" mostra il conto predefinito del foglio, senza scelta.
+- **Sposta (investimenti)**: deciso di farlo dopo la fine dell'app principale (vedi Da fare, punto 5). Da definire allora: anteprima del pannello e adattamento di Bilanci API.
 
 ## Decisioni prese
 
@@ -74,9 +77,16 @@ Ultimo aggiornamento: 25/11/2026 (7)
 | 25/11/2026 | Data proposta nel pannello: oggi nel mese in corso, l'ultimo giorno del mese quando si guarda un mese passato; data futura evidenziata in accento |
 | 25/11/2026 | Sottocategoria sempre obbligatoria (si propone la prima); tag salvati in coda alla nota, nell'ordine del foglio Tag |
 | 25/11/2026 | Tastierino: massimo 2 decimali, risultato del calcolo mostrato sotto l'importo; importo zero o negativo non si salva. Selettori: trascinamento (una voce ogni circa 80 px) o tocco sulle voci laterali; con 2 voci si vede solo quella a destra |
+| 25/11/2026 | Confermati: pannello Collegamento dal basso (indirizzo, chiave, dashboard); errori in ambra per ora; "Conto preselezionato" in sola lettura dal foglio Conti |
+| 25/11/2026 | Il conto di spesa si chiama definitivamente "Liquidità" |
+| 25/11/2026 | Movimenti: titolo = nota senza tag (tag come etichette), altrimenti sottocategoria o categoria; conto nascosto se è l'unico conto di spesa; In programma (tutte le date future) solo sul mese in corso |
+| 25/11/2026 | Movimenti: tocco = modifica nello stesso pannello con in più il selettore Categoria ("Salva modifiche"); Duplica apre il pannello compilato con la data di oggi; Elimina chiede un secondo tocco su "Conferma" |
+| 25/11/2026 | Categorie, sottocategorie e conti non più attivi: righe in grigio in Movimenti, restano scelti in modifica finché non li cambi, contano nei totali di Inserisci con un segmento grigio; movimenti vecchi senza sottocategoria mostrano "Nessuna". Filtri: ultimi 24 mesi, tutte le categorie, conti di spesa più quelli del mese; la ricerca vale sul mese scelto. Righe senza ID (storiche, prima di `assegnaID()`) visibili ma non modificabili |
+| 25/11/2026 | Investimenti: si registreranno in nummo come trasferimenti (voce "Sposta"), come in 1Money; sostituisce "niente trasferimenti tra conti" del 24/11. Si fa dopo la fine dell'app principale |
 
 ## Registro
 
+- **25/11/2026** – Schermata Movimenti in `frontend/app.js` e `frontend/app.css`: lista per giorno con totali, In programma, avviso in attesa, scorrimento con Duplica ed Elimina, pannello in modifica con selettore Categoria, filtri e ricerca; coda offline estesa a `update` e `delete` (`accoda()`, versioni per le voci cambiate durante l'invio). Provata in Chrome headless con un Bilanci API finto (25 controlli), più le prove di Inserisci e delle altezze.
 - **25/11/2026** – Inserisci si adatta all'altezza utile dello schermo (sul telefono le barre del browser la riducono): la cornice prende lo spazio che resta, sotto 820 px si stringono margini, icone e tastierino del pannello e sparisce il suggerimento. Provato in Chrome headless da 892 a 680 px di altezza: niente scorrimento.
 - **25/11/2026** – Inserisci, Nuova spesa e coda offline provati dall'utente con il vero Bilanci API: funzionano.
 - **25/11/2026** – Inserisci (anello, cornice 5×4, mese, Spesa / Entrata, capsula di sincronizzazione), pannello Nuova spesa e coda offline in `frontend/app.js` e `frontend/app.css`; `Api.invia` (POST con ops) in `frontend/api.js`. IndexedDB alla versione 2 con lo store `coda`. Provati in Chrome headless a 412×892 con un Bilanci API finto: salvataggio, calcoli, tag, data futura, offline con ricarica e invio al ritorno della rete, mesi vecchi, trascinamento dei selettori.

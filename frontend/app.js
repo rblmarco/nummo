@@ -95,6 +95,7 @@
     mesi: {},              // movimenti dei mesi fuori dal bootstrap: { 'AAAA-MM': [..] | 'carico' | 'errore' }
     ym: null,              // mese mostrato in Inserisci (AAAA-MM)
     tipo: 'Spesa',         // interruttore Spesa / Entrata
+    filtri: { ym: null, cat: null, conto: null, testo: '' }, // filtri di Movimenti
     tab: 'impostazioni'
   };
 
@@ -218,13 +219,21 @@
   /** Giorni coperti dal bootstrap (GIORNI_RECENTI in backend/Code.gs) */
   const GIORNI_RECENTI = 92;
 
-  /** Movimenti del bootstrap più quelli ancora in coda (che contano già, anche se non inviati) */
-  function movimentiTutti() {
+  /**
+   * Applica la coda a una lista di movimenti: le voci in coda sostituiscono (add / update) o tolgono (delete)
+   * il movimento con lo stesso ID. In coda c'è al massimo una voce per ID.
+   */
+  function applicaCoda(base, filtroCoda) {
     const inCoda = new Set(stato.coda.map(function (v) { return v.id; }));
-    const base = ((stato.dati && stato.dati.movimenti) || []).filter(function (m) { return !m.id || !inCoda.has(m.id); });
-    return base.concat(stato.coda.filter(function (v) { return v.op === 'add'; }).map(function (v) {
-      return Object.assign({ id: v.id, inAttesa: true }, v.mov);
+    const resto = base.filter(function (m) { return !m.id || !inCoda.has(m.id); });
+    return resto.concat(stato.coda.filter(function (v) { return v.op !== 'delete' && (!filtroCoda || filtroCoda(v)); }).map(function (v) {
+      return Object.assign({ id: v.id, inAttesa: true, fonte: v.fonte || 'app' }, v.mov);
     }));
+  }
+
+  /** Movimenti del bootstrap più le modifiche ancora in coda (che contano già, anche se non inviate) */
+  function movimentiTutti() {
+    return applicaCoda((stato.dati && stato.dati.movimenti) || []);
   }
 
   /** Movimenti divisi in effettivi (fino a oggi) e in programma (data futura sul dispositivo) */
@@ -257,8 +266,7 @@
     } else {
       const m = stato.mesi[ym];
       if (!Array.isArray(m)) return m || 'carico';
-      const ids = new Set(m.map(function (x) { return x.id; }));
-      lista = m.concat(movimentiTutti().filter(function (x) { return x.inAttesa && !ids.has(x.id); }));
+      lista = applicaCoda(m, function (v) { return v.mov.data.slice(0, 7) === ym; });
     }
     return lista.filter(function (x) { return x.data.slice(0, 7) === ym && x.data <= oggi; });
   }
@@ -301,56 +309,85 @@
     if (navigator.onLine === false) return stato.coda.length;
     stato.inviando = true;
     render();
-    const voci = stato.coda.slice();
+    const voci = stato.coda.map(function (v) { return Object.assign({}, v); });
+    inVolo = new Set(voci.map(function (v) { return v.id; }));
+    let cambiate = false;
     try {
       const r = await Api.invia(stato.config, voci.map(function (v) { return { op: v.op, id: v.id, mov: v.mov }; }));
       const esiti = new Map((r.risultati || []).map(function (x) { return [x.id, x]; }));
       for (const v of voci) {
         const e = esiti.get(v.id);
+        const ora = stato.coda.find(function (x) { return x.id === v.id; });
         if (e && e.ok) {
-          await Db.togli(v.id);
           confermaInLocale(v);
-        } else {
-          v.tentativi = (v.tentativi || 0) + 1;
-          v.errore = e ? (e.errore || 'Errore') : 'Nessuna risposta per questo movimento';
-          await Db.metti(v);
+          if (ora && ora.ver === v.ver) await Db.togli(v.id);
+          else if (ora) { cambiate = true; if (v.op === 'add' && ora.op === 'add') { ora.op = 'update'; await Db.metti(ora); } }
+        } else if (ora && ora.ver === v.ver) {
+          ora.tentativi = (ora.tentativi || 0) + 1;
+          ora.errore = e ? (e.errore || 'Errore') : 'Nessuna risposta per questo movimento';
+          await Db.metti(ora);
         }
       }
       registraEsito(true, 'Collegato');
     } catch (err) {
       // Rete o Bilanci API non raggiungibile: la coda resta com'è e si ritenta più tardi
-      voci.forEach(function (v) { v.tentativi = (v.tentativi || 0) + 1; v.errore = err.message; });
-      await Promise.all(voci.map(function (v) { return Db.metti(v).catch(function () {}); }));
+      stato.coda.forEach(function (v) { v.tentativi = (v.tentativi || 0) + 1; v.errore = err.message; });
+      await Promise.all(stato.coda.map(function (v) { return Db.metti(v).catch(function () {}); }));
       if (navigator.onLine !== false) registraEsito(false, err.message);
     } finally {
       try { stato.coda = await Db.coda(); } catch (e) { /* resta la copia in memoria */ }
       stato.inviando = false;
+      inVolo = new Set();
       render();
     }
+    // Voci cambiate mentre erano in viaggio: si rimandano subito
+    if (cambiate) return invia();
     return stato.coda.length;
   }
 
-  /** Un movimento confermato passa dalla coda alla copia locale dei dati, finché il prossimo bootstrap non lo riporta. */
+  /** Un'operazione confermata passa dalla coda alla copia locale dei dati, finché il prossimo bootstrap non la riporta. */
   function confermaInLocale(v) {
-    if (v.op !== 'add') return;
-    const m = Object.assign({ id: v.id, fonte: 'app' }, v.mov);
+    const m = Object.assign({ id: v.id, fonte: v.fonte || 'app' }, v.mov);
+    const togli = function (lista) { return lista.filter(function (x) { return x.id !== v.id; }); };
+    const nuova = function (lista) { return v.op === 'delete' ? togli(lista) : togli(lista).concat([m]); };
     if (stato.dati) {
-      stato.dati.movimenti = (stato.dati.movimenti || []).filter(function (x) { return x.id !== v.id; }).concat([m]);
+      stato.dati.movimenti = nuova(stato.dati.movimenti || []);
       Db.set('bootstrap', { dati: stato.dati, quando: stato.ultimaSync }).catch(function () {});
     }
-    const ym = m.data.slice(0, 7);
-    if (Array.isArray(stato.mesi[ym])) stato.mesi[ym] = stato.mesi[ym].filter(function (x) { return x.id !== v.id; }).concat([m]);
+    Object.keys(stato.mesi).forEach(function (ym) {
+      if (!Array.isArray(stato.mesi[ym])) return;
+      stato.mesi[ym] = togli(stato.mesi[ym]);
+      if (v.op !== 'delete' && m.data.slice(0, 7) === ym) stato.mesi[ym].push(m);
+    });
   }
 
-  /** Salva un movimento nuovo: prima sul dispositivo, poi prova a inviarlo. */
-  async function salvaMovimento(mov) {
-    const voce = { id: nuovoId(), op: 'add', mov: mov, creato: Date.now(), tentativi: 0, errore: null };
+  let inVolo = new Set(); // ID inviati e in attesa di risposta
+
+  /**
+   * Mette in coda un'operazione e prova a inviarla. In coda resta una sola voce per ID:
+   * modificare un movimento non ancora inviato aggiorna la sua voce "add", eliminarlo la toglie.
+   */
+  async function accoda(op, id, mov, fonte) {
+    const prima = stato.coda.find(function (v) { return v.id === id; });
+    const voce = { id: id, op: op, mov: mov, fonte: fonte || null, creato: prima ? prima.creato : Date.now(), tentativi: 0, errore: null, ver: nuovoId() };
+    if (prima && prima.op === 'add' && !inVolo.has(id)) {
+      if (op === 'delete') {
+        await Db.togli(id);
+        stato.coda = stato.coda.filter(function (v) { return v.id !== id; });
+        render();
+        return null;
+      }
+      voce.op = 'add';
+    }
     await Db.metti(voce);
-    stato.coda = stato.coda.concat([voce]);
+    stato.coda = stato.coda.filter(function (v) { return v.id !== id; }).concat([voce]);
     render();
     invia();
     return voce;
   }
+
+  /** Salva un movimento nuovo: prima sul dispositivo, poi prova a inviarlo. */
+  function salvaMovimento(mov) { return accoda('add', nuovoId(), mov); }
 
   /** Invia la coda e poi scarica categorie, conti, tag e movimenti recenti. Restituisce true se riuscito. */
   async function aggiorna(silenzioso) {
@@ -588,17 +625,258 @@
       '<p class="suggerimento">Tocca una categoria per registrare ' + (stato.tipo === 'Entrata' ? 'un\'entrata' : 'una spesa') + '</p>';
   }
 
+  /* ---------- Movimenti ---------- */
+
+  const GIORNI_LUNGHI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+
+  /** Intestazione del giorno: "Oggi, 21 novembre", "Ieri, 20 novembre", "Martedì 11 novembre" */
+  function titoloGiorno(iso) {
+    const d = dataDa(iso);
+    const diff = Math.round((dataDa(isoOggi()) - d) / 86400000);
+    const giorno = d.getDate() + ' ' + MESI_LUNGHI[d.getMonth()].toLowerCase();
+    if (diff === 0) return 'Oggi, ' + giorno;
+    if (diff === 1) return 'Ieri, ' + giorno;
+    return GIORNI_LUNGHI[d.getDay()] + ' ' + giorno;
+  }
+
+  /** Importo con segno e due decimali: "−15,00 €", "+1.000,00 €" */
+  function euroSegno(n) {
+    const a = Math.abs(n);
+    const intero = Math.trunc(a);
+    const dec = String(Math.round((a - intero) * 100)).padStart(2, '0');
+    return (n < 0 ? '−' : '+') + String(intero).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + dec + ' €';
+  }
+  function segnato(m) { return m.tipo === 'Entrata' ? m.importo : -m.importo; }
+
+  /** Applica ricerca e filtri di categoria e conto */
+  function filtra(lista) {
+    const f = stato.filtri;
+    const q = f.testo.trim().toLowerCase();
+    return lista.filter(function (m) {
+      if (f.cat && m.categoria !== f.cat) return false;
+      if (f.conto && m.conto !== f.conto) return false;
+      if (q && String(m.nota || '').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+  }
+
+  function htmlRigaMov(m, futura) {
+    const info = {};
+    ['Spesa', 'Entrata'].forEach(function (t) { macroCategorie(t).forEach(function (c) { info[t + '|' + c.nome] = c; }); });
+    const c = info[m.tipo + '|' + m.categoria];
+    const col = c ? (c.colore || '#FFFFFF') : '#8E8E93';
+    const icona = c ? (c.icona || 'category') : 'category';
+    const n = separaNota(m.nota);
+    const titolo = n.testo || m.sottocategoria || m.categoria;
+    const percorso = m.categoria + (m.sottocategoria ? ' › ' + m.sottocategoria : '');
+    const unico = contiSpesa().length === 1 && contiSpesa()[0].nome === m.conto;
+    const sotto = percorso + (m.conto && !unico ? ' · ' + m.conto : '');
+    let stato_;
+    if (futura) stato_ = '<span class="mov-stato futuro"><span class="ms" aria-hidden="true">event</span>' + esc(etichettaData(m.data).replace(/^(Oggi|Ieri|Domani), /, '').toLowerCase()) + '</span>';
+    else if (m.inAttesa) stato_ = '<span class="mov-stato attesa"><span class="ms" aria-hidden="true">schedule</span>in attesa</span>';
+    else stato_ = '<span class="mov-stato"><span class="ms" aria-hidden="true">cloud_done</span></span>';
+    const modificabile = !!m.id;
+    return '<div class="mov-scorre' + (modificabile ? '' : ' fisso') + '" data-id="' + esc(m.id || '') + '">' +
+      (modificabile ? '<div class="mov-azioni">' +
+        '<button type="button" class="mov-az duplica" data-azione="duplica" data-id="' + esc(m.id) + '"><span class="ms" aria-hidden="true">content_copy</span>Duplica</button>' +
+        '<button type="button" class="mov-az elimina" data-azione="elimina" data-id="' + esc(m.id) + '"><span class="ms" aria-hidden="true">delete</span><span class="mov-az-testo">Elimina</span></button>' +
+      '</div>' : '') +
+      '<button type="button" class="mov-riga' + (futura ? ' futura' : '') + (c ? '' : ' inattiva') + '" data-azione="modifica" data-id="' + esc(m.id || '') + '">' +
+        '<span class="mov-icona" style="background:' + tinta(col, futura ? .084 : .108) + ';border-color:' + tinta(col, .14) + '"><span class="ms f" aria-hidden="true" style="color:' + esc(col) + '">' + esc(icona) + '</span></span>' +
+        '<span class="mov-testo"><span class="mov-titolo"><span class="mov-titolo-t">' + esc(titolo) + '</span>' +
+          n.tag.map(function (t) { return '<span class="mov-tag">' + esc(t) + '</span>'; }).join('') + '</span>' +
+          '<span class="mov-sotto">' + esc(sotto) + '</span></span>' +
+        '<span class="mov-destra"><span class="mov-importo' + (m.tipo === 'Entrata' ? ' entrata' : '') + '">' + euroSegno(segnato(m)) + '</span>' + stato_ + '</span>' +
+      '</button></div>';
+  }
+
+  function htmlGruppo(titolo, totale, righe, classe, iconaTitolo) {
+    return '<div class="giorno-testa"><span>' + (iconaTitolo ? '<span class="ms" aria-hidden="true">' + iconaTitolo + '</span>' : '') + esc(titolo) + '</span><span>' + euroSegno(totale) + '</span></div>' +
+      '<div class="mov-gruppo ' + classe + '">' + righe + '</div>';
+  }
+
+  function renderListaMovimenti() {
+    const el = document.getElementById('mov-lista');
+    if (!el) return;
+    const ym = stato.filtri.ym;
+    const movs = movimentiDelMese(ym);
+    if (movs === 'carico' && stato.mesi[ym] === undefined) caricaMese(ym);
+    let html = '';
+
+    // Avviso dei movimenti in attesa
+    const n = stato.coda.length;
+    if (n) {
+      const errore = stato.coda.find(function (v) { return v.errore && v.tentativi; });
+      html += '<div class="mov-avviso">' +
+        '<span class="ms" aria-hidden="true">cloud_upload</span>' +
+        '<span class="mov-avviso-testo">' + n + (n === 1 ? ' movimento in attesa di invio' : ' movimenti in attesa di invio') +
+          (errore && navigator.onLine !== false ? '<span class="mov-avviso-errore">' + esc(errore.errore) + '</span>' : '') + '</span>' +
+        '<button type="button" class="mov-invia" data-azione="invia"' + (stato.inviando ? ' disabled' : '') + '>' + (stato.inviando ? 'Invio…' : 'Invia ora') + '</button>' +
+      '</div>';
+    }
+
+    // In programma: tutte le date future, solo guardando il mese in corso
+    if (ym === ymOggi()) {
+      const fut = filtra(movimentiDivisi().inProgramma).sort(function (a, b) { return a.data < b.data ? -1 : a.data > b.data ? 1 : 0; });
+      if (fut.length) {
+        const tot = fut.reduce(function (t, m) { return t + segnato(m); }, 0);
+        html += htmlGruppo('In programma', tot, fut.map(function (m) { return htmlRigaMov(m, true); }).join(''), 'programma', 'event_upcoming') +
+          '<span class="mov-nota">Non entrano nei totali fino al giorno indicato.</span>';
+      }
+    }
+
+    if (movs === 'carico') html += '<div class="segnaposto vetro">Carico i movimenti del mese…</div>';
+    else if (movs === 'errore') html += '<div class="segnaposto vetro">Questo mese non è in memoria: serve la rete per scaricarlo.</div>';
+    else {
+      const lista = filtra(movs).sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
+      const giorni = [];
+      lista.forEach(function (m) {
+        const g = giorni[giorni.length - 1];
+        if (g && g.data === m.data) g.m.push(m); else giorni.push({ data: m.data, m: [m] });
+      });
+      giorni.forEach(function (g) {
+        const tot = g.m.reduce(function (t, m) { return t + segnato(m); }, 0);
+        html += htmlGruppo(titoloGiorno(g.data), tot, g.m.map(function (m) { return htmlRigaMov(m, false); }).join(''), 'vetro');
+      });
+      if (!giorni.length) {
+        const filtrato = stato.filtri.cat || stato.filtri.conto || stato.filtri.testo.trim();
+        html += '<div class="segnaposto vetro">' + (filtrato ? 'Nessun movimento con questi filtri.' : 'Nessun movimento in ' + nomeMese(ym).toLowerCase() + '.') + '</div>';
+      } else {
+        html += '<p class="suggerimento">Tocca per modificare · scorri per duplicare o eliminare</p>';
+      }
+    }
+    el.innerHTML = html;
+  }
+
+  function chipFiltro(azione, testo, attivo) {
+    return '<button type="button" class="chip-filtro' + (attivo ? ' attivo' : ' vetro-leggero') + '" data-azione="' + azione + '">' +
+      '<span>' + esc(testo) + '</span><span class="ms" aria-hidden="true">expand_more</span></button>';
+  }
+
   function renderMovimenti() {
     const d = stato.dati;
-    let corpo;
     if (!d) {
-      corpo = 'Nessun movimento scaricato.';
-    } else {
-      const div = movimentiDivisi();
-      corpo = '<strong>' + div.effettivi.length + '</strong> movimenti negli ultimi 3 mesi, <strong>' +
-        div.inProgramma.length + '</strong> in programma. La lista arriva in un passo successivo.';
+      $('#s-movimenti').innerHTML = '<h1 class="titolo">Movimenti</h1><div class="segnaposto vetro">' +
+        (configurato(stato.config) ? 'Nessun movimento scaricato: apri <strong>Impostazioni</strong> e premi Sincronizza ora.' : 'Per iniziare collega l\'app a Bilanci API in <strong>Impostazioni</strong>.') + '</div>';
+      return;
     }
-    $('#s-movimenti').innerHTML = '<h1 class="titolo">Movimenti</h1><div class="segnaposto vetro">' + corpo + '</div>';
+    const f = stato.filtri;
+    if (!f.ym) f.ym = ymOggi();
+    const cerca = document.getElementById('mov-cerca');
+    // Se la ricerca è già sullo schermo non la si ridisegna (si perderebbe il fuoco)
+    if (!cerca) {
+      $('#s-movimenti').innerHTML = '<h1 class="titolo mov-titolo-pagina">Movimenti</h1>' +
+        '<label class="cerca vetro-leggero"><span class="ms" aria-hidden="true">search</span><span class="sr">Cerca</span>' +
+          '<input id="mov-cerca" type="search" autocomplete="off" enterkeyhint="search" placeholder="Cerca nelle note" value="' + esc(f.testo) + '"></label>' +
+        '<div class="filtri" id="mov-filtri"></div>' +
+        '<div id="mov-lista"></div>';
+    }
+    document.getElementById('mov-filtri').innerHTML =
+      chipFiltro('filtro-mese', nomeMese(f.ym), true) +
+      chipFiltro('filtro-cat', f.cat || 'Categoria', !!f.cat) +
+      chipFiltro('filtro-conto', f.conto || 'Conto', !!f.conto);
+    renderListaMovimenti();
+  }
+
+  /** Movimento visibile in Movimenti con questo ID (bootstrap, mesi scaricati, coda) */
+  function trovaMovimento(id) {
+    const tutti = movimentiTutti();
+    let m = tutti.find(function (x) { return x.id === id; });
+    if (!m) Object.keys(stato.mesi).some(function (ym) {
+      if (Array.isArray(stato.mesi[ym])) m = applicaCoda(stato.mesi[ym]).find(function (x) { return x.id === id; });
+      return !!m;
+    });
+    return m || null;
+  }
+
+  function voceScelta(azione, valore, testo, sotto, scelto) {
+    return '<button type="button" class="voce voce-scelta" data-azione="' + azione + '" data-valore="' + esc(valore) + '">' +
+      '<span class="voce-testo"><span class="voce-titolo">' + esc(testo) + '</span>' + (sotto ? '<span class="voce-sotto">' + esc(sotto) + '</span>' : '') + '</span>' +
+      (scelto ? '<span class="ms" aria-hidden="true" style="color:var(--accento)">check</span>' : '') + '</button>';
+  }
+
+  function apriFiltroMese() {
+    let voci = '';
+    for (let i = 0; i < 24; i++) {
+      const ym = ymSposta(ymOggi(), -i);
+      voci += voceScelta('scegli-mese', ym, nomeMese(ym), null, ym === stato.filtri.ym);
+    }
+    apriPannello(testaPannello('calendar_month', 'Mese') + '<div class="lista vetro">' + voci + '</div>');
+  }
+
+  function apriFiltroCat() {
+    let html = '<div class="lista vetro">' + voceScelta('scegli-cat', '', 'Tutte le categorie', null, !stato.filtri.cat) + '</div>';
+    ['Spesa', 'Entrata'].forEach(function (t) {
+      const ms = macroCategorie(t);
+      if (!ms.length) return;
+      html += '<span class="gruppo-titolo">' + (t === 'Spesa' ? 'Spese' : 'Entrate') + '</span><div class="lista vetro">' +
+        ms.map(function (c) { return voceScelta('scegli-cat', c.nome, c.nome, null, stato.filtri.cat === c.nome); }).join('') + '</div>';
+    });
+    apriPannello(testaPannello('category', 'Categoria') + '<div>' + html + '</div>');
+  }
+
+  function apriFiltroConto() {
+    const nomi = [];
+    contiSpesa().forEach(function (c) { nomi.push(c.nome); });
+    const movs = movimentiDelMese(stato.filtri.ym);
+    if (Array.isArray(movs)) movs.forEach(function (m) { if (m.conto && nomi.indexOf(m.conto) < 0) nomi.push(m.conto); });
+    apriPannello(testaPannello('account_balance_wallet', 'Conto') + '<div class="lista vetro">' +
+      voceScelta('scegli-conto', '', 'Tutti i conti', null, !stato.filtri.conto) +
+      nomi.map(function (n) { return voceScelta('scegli-conto', n, n, null, stato.filtri.conto === n); }).join('') + '</div>');
+  }
+
+  /* Scorrimento delle righe: verso sinistra mostra Duplica ed Elimina. */
+  let scorriRiga = null;
+  function chiudiRighe(tranne) {
+    document.querySelectorAll('.mov-scorre.aperta').forEach(function (el) {
+      if (el === tranne) return;
+      el.classList.remove('aperta');
+      el.querySelector('.mov-riga').style.transform = '';
+      const e = el.querySelector('.elimina');
+      if (e) { e.classList.remove('conferma'); e.querySelector('.mov-az-testo').textContent = 'Elimina'; }
+    });
+  }
+  document.addEventListener('pointerdown', function (ev) {
+    const w = ev.target.closest('.mov-scorre:not(.fisso)');
+    if (!w || ev.target.closest('.mov-azioni')) return;
+    scorriRiga = { w: w, riga: w.querySelector('.mov-riga'), x0: ev.clientX, y0: ev.clientY, dx: 0, id: ev.pointerId, orizz: null, aperta: w.classList.contains('aperta') };
+  });
+  document.addEventListener('pointermove', function (ev) {
+    const t = scorriRiga;
+    if (!t || ev.pointerId !== t.id) return;
+    const dx = ev.clientX - t.x0, dy = ev.clientY - t.y0;
+    if (t.orizz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) t.orizz = Math.abs(dx) > Math.abs(dy);
+    if (!t.orizz) return;
+    t.w.classList.add('scorrendo');
+    t.dx = dx;
+    const base = t.aperta ? -LARGHEZZA_AZIONI : 0;
+    const x = Math.max(-LARGHEZZA_AZIONI - 20, Math.min(0, base + dx));
+    t.riga.style.transition = 'none';
+    t.riga.style.transform = 'translateX(' + x + 'px)';
+  });
+  const LARGHEZZA_AZIONI = 168;
+  function fineScorriRiga(ev) {
+    const t = scorriRiga;
+    if (!t || ev.pointerId !== t.id) return;
+    scorriRiga = null;
+    t.w.classList.remove('scorrendo');
+    if (!t.orizz) return;
+    ignoraClick = true;
+    setTimeout(function () { ignoraClick = false; }, 0);
+    t.riga.style.transition = '';
+    const apri = t.aperta ? t.dx < 40 : t.dx < -50;
+    chiudiRighe(t.w);
+    t.w.classList.toggle('aperta', apri);
+    t.riga.style.transform = apri ? 'translateX(' + -LARGHEZZA_AZIONI + 'px)' : '';
+  }
+  document.addEventListener('pointerup', fineScorriRiga);
+  document.addEventListener('pointercancel', fineScorriRiga);
+
+  async function eliminaMovimento(id) {
+    const m = trovaMovimento(id);
+    if (!m) return;
+    await accoda('delete', id, { data: m.data, tipo: m.tipo, conto: m.conto, categoria: m.categoria, sottocategoria: m.sottocategoria, importo: m.importo, nota: m.nota }, m.fonte);
+    avviso('Movimento eliminato' + (navigator.onLine === false ? ' · in attesa di invio' : ''));
   }
 
   /* ---------- Pannello dal basso ---------- */
@@ -825,33 +1103,69 @@
     };
   }
 
+  /** Voci del selettore: sottocategorie (null = "Nessuna"), conti o categorie */
+  function listaSelettore(chi) {
+    if (chi === 'sub') return ns.subs.map(function (x) { return x == null ? 'Nessuna' : x; });
+    if (chi === 'conto') return ns.conti.map(function (c) { return c.nome; });
+    return ns.cats.map(function (c) { return c.nome; });
+  }
+
   function htmlSelettore(chi) {
-    const isSub = chi === 'sub';
-    const lista = isSub ? ns.cat.sub : ns.conti.map(function (c) { return c.nome; });
-    const i = isSub ? ns.subIdx : ns.contoIdx;
-    const col = isSub ? (ns.cat.colore || '#FFFFFF') : COLORE_CONTO;
-    const icona = isSub ? (ns.cat.icona || 'category') : 'account_balance_wallet';
+    const lista = listaSelettore(chi);
+    const i = chi === 'sub' ? ns.subIdx : chi === 'conto' ? ns.contoIdx : ns.catIdx;
+    const cat = ns.cats[ns.catIdx];
+    const col = chi === 'conto' ? COLORE_CONTO : (cat.colore || '#FFFFFF');
+    const icona = chi === 'conto' ? 'account_balance_wallet' : (cat.icona || 'category');
+    const etichetta = { sub: 'Sottocategoria', conto: 'Conto', cat: 'Categoria' }[chi];
     const v = vociSelettore(lista.length, i);
     const lato = function (k, passo, livello) {
       return k == null ? '' : '<button type="button" class="sel-lato l' + livello + ' vetro-leggero" data-azione="scorri" data-sel="' + chi + '" data-passo="' + passo + '" tabindex="-1">' + esc(lista[k]) + '</button>';
     };
-    return '<div class="sel" id="sel-' + chi + '" data-sel="' + chi + '" role="group" aria-label="' + (isSub ? 'Sottocategoria' : 'Conto') + '">' +
+    return '<div class="sel" id="sel-' + chi + '" data-sel="' + chi + '" role="group" aria-label="' + etichetta + '">' +
       '<div class="sel-traccia">' +
         '<div class="sel-sx">' + lato(v.l2, -2, 2) + lato(v.l1, -1, 1) + '</div>' +
         '<div class="sel-centro" style="background:' + tinta(col, .156) + ';border-color:' + tinta(col, .14) + '">' +
           '<span class="sel-icona" style="background:' + tinta(col, .2) + '"><span class="ms f" aria-hidden="true" style="color:' + esc(col) + '">' + esc(icona) + '</span></span>' +
-          '<span class="sel-testo"><span class="sel-etichetta">' + (isSub ? 'Sottocategoria' : 'Conto') + '</span><span class="sel-valore">' + esc(lista[i]) + '</span></span>' +
+          '<span class="sel-testo"><span class="sel-etichetta">' + etichetta + '</span><span class="sel-valore">' + esc(lista[i]) + '</span></span>' +
         '</div>' +
         '<div class="sel-dx">' + lato(v.r1, 1, 1) + lato(v.r2, 2, 2) + '</div>' +
       '</div></div>';
   }
 
+  /** Sottocategorie proposte per la categoria scelta; tiene quella del movimento se non è più attiva */
+  function preparaSub(cat, subMov, haSub) {
+    const subs = cat.sub.slice();
+    if (haSub && subMov != null && subs.indexOf(subMov) < 0) subs.unshift(subMov);
+    if (haSub && subMov == null && subs.length) subs.unshift(null);
+    ns.subs = subs;
+    ns.subIdx = haSub ? Math.max(0, subs.indexOf(subMov)) : 0;
+  }
+
+  function renderTestaCat() {
+    const cat = ns.cats[ns.catIdx];
+    const col = cat.colore || '#FFFFFF';
+    const ic = document.getElementById('ns-cat-icona');
+    if (ic) {
+      ic.style.background = tinta(col, .132); ic.style.borderColor = tinta(col, .14);
+      ic.innerHTML = '<span class="ms f" aria-hidden="true" style="color:' + esc(col) + '">' + esc(cat.icona || 'category') + '</span>';
+      document.getElementById('ns-cat-nome').textContent = cat.nome;
+    }
+    const box = document.getElementById('ns-sub-box');
+    if (box) box.innerHTML = ns.subs.length ? htmlSelettore('sub') : '';
+  }
+
   function scorriSelettore(chi, passo) {
     if (!ns || !passo) return;
-    const n = chi === 'sub' ? ns.cat.sub.length : ns.conti.length;
+    const n = listaSelettore(chi).length;
     if (n < 2) return;
-    if (chi === 'sub') ns.subIdx = ((ns.subIdx + passo) % n + n) % n;
-    else ns.contoIdx = ((ns.contoIdx + passo) % n + n) % n;
+    const giro = function (i) { return ((i + passo) % n + n) % n; };
+    if (chi === 'sub') ns.subIdx = giro(ns.subIdx);
+    else if (chi === 'conto') ns.contoIdx = giro(ns.contoIdx);
+    else {
+      ns.catIdx = giro(ns.catIdx);
+      preparaSub(ns.cats[ns.catIdx], null, false);
+      renderTestaCat();
+    }
     const el = document.getElementById('sel-' + chi);
     if (el) el.outerHTML = htmlSelettore(chi);
   }
@@ -890,41 +1204,80 @@
     }).join('') + '</div>';
   }
 
+  /** Pannello per una spesa nuova da Inserisci */
   function apriNuovo(nomeCat) {
-    const cat = macroCategorie(stato.tipo).find(function (c) { return c.nome === nomeCat; });
-    if (!cat) return;
-    const conti = contiSpesa();
-    const pred = contoPredefinito();
     // Data proposta: oggi se si guarda il mese in corso, altrimenti l'ultimo giorno del mese mostrato
     const data = (!stato.ym || stato.ym === ymOggi()) ? isoOggi() : isoDa(new Date(+stato.ym.slice(0, 4), +stato.ym.slice(5, 7), 0));
+    apriMovimento({ modo: 'nuovo', tipo: stato.tipo, categoria: nomeCat, data: data });
+  }
+
+  /** "12.5" → "12,5" per il tastierino */
+  function exprDa(importo) { return String(Math.round(importo * 100) / 100).replace('.', ','); }
+
+  /** Separa la nota in testo e tag attivi: "Benzina #sh #altro" → { testo: 'Benzina #altro', tag: ['#sh'] } */
+  function separaNota(nota) {
+    const attivi = new Set(((stato.dati && stato.dati.tag) || []).map(function (t) { return t.tag; }));
+    const tag = [], resto = [];
+    String(nota || '').split(/\s+/).filter(Boolean).forEach(function (p) { (attivi.has(p) ? tag : resto).push(p); });
+    return { testo: resto.join(' '), tag: tag };
+  }
+
+  /**
+   * Pannello di un movimento.
+   * o.modo: 'nuovo' (da Inserisci), 'modifica' o 'duplica' (da Movimenti, con o.mov).
+   * In modifica e duplica compare anche il selettore della categoria.
+   */
+  function apriMovimento(o) {
+    const mov = o.mov || null;
+    const tipo = mov ? mov.tipo : o.tipo;
+    const nomeCat = mov ? mov.categoria : o.categoria;
+    const cats = macroCategorie(tipo).map(function (c) { return Object.assign({}, c, { sub: c.sub.slice() }); });
+    let catIdx = cats.findIndex(function (c) { return c.nome === nomeCat; });
+    if (catIdx < 0) {
+      if (!mov) return;
+      // Categoria non più attiva: resta scelta finché non la cambi
+      cats.unshift({ nome: nomeCat, icona: 'category', colore: '#8E8E93', sub: [], inattiva: true });
+      catIdx = 0;
+    }
+    const conti = contiSpesa().slice();
+    if (mov && mov.conto && !conti.some(function (c) { return c.nome === mov.conto; })) conti.unshift({ nome: mov.conto, tipo: 'Spesa' });
+    const pred = contoPredefinito();
+    const contoIdx = mov ? Math.max(0, conti.findIndex(function (c) { return c.nome === mov.conto; })) : Math.max(0, conti.indexOf(pred));
+    const nota = separaNota(mov ? mov.nota : '');
     ns = {
-      tipo: stato.tipo, cat: cat, conti: conti,
-      subIdx: 0, contoIdx: Math.max(0, conti.indexOf(pred)),
-      expr: '', tag: new Set(), data: data
+      modo: o.modo, id: o.modo === 'modifica' ? mov.id : null, fonte: o.modo === 'modifica' ? (mov.fonte || null) : null,
+      tipo: tipo, cats: cats, catIdx: catIdx, conti: conti, contoIdx: contoIdx,
+      expr: mov ? exprDa(mov.importo) : '', tag: new Set(nota.tag),
+      data: o.modo === 'duplica' ? isoOggi() : (mov ? mov.data : o.data)
     };
+    preparaSub(cats[catIdx], mov ? mov.sottocategoria : null, !!mov);
+    const cat = cats[catIdx];
     const col = cat.colore || '#FFFFFF';
     const tasti = ['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '−', ',', '0', 'canc', '+'];
     const nomiOp = { '÷': 'Diviso', '×': 'Per', '−': 'Meno', '+': 'Più' };
+    const cosa = tipo === 'Entrata' ? 'entrata' : 'spesa';
     apriPannello(
       '<div class="pannello-testa">' +
-        '<span class="tondo" style="background:' + tinta(col, .132) + ';border:1px solid ' + tinta(col, .14) + '"><span class="ms f" aria-hidden="true" style="color:' + esc(col) + '">' + esc(cat.icona || 'category') + '</span></span>' +
-        '<span class="nome">' + esc(cat.nome) + '</span>' +
+        '<span class="tondo" id="ns-cat-icona" style="background:' + tinta(col, .132) + ';border:1px solid ' + tinta(col, .14) + '"><span class="ms f" aria-hidden="true" style="color:' + esc(col) + '">' + esc(cat.icona || 'category') + '</span></span>' +
+        '<span class="nome"><span id="ns-cat-nome">' + esc(cat.nome) + '</span>' + (o.modo === 'nuovo' ? '' : '<span class="nome-modo">' + (o.modo === 'modifica' ? 'Modifica' : 'Duplica') + '</span>') + '</span>' +
         '<label class="capsula-data vetro-leggero" id="ns-data"><span class="ms" aria-hidden="true">calendar_today</span><span class="data-testo"></span>' +
-          '<input type="date" id="ns-data-input" value="' + data + '" required></label>' +
+          '<input type="date" id="ns-data-input" value="' + ns.data + '" required></label>' +
         '<button type="button" class="tondo vetro-leggero" data-azione="chiudi" aria-label="Chiudi"><span class="ms" aria-hidden="true">close</span></button>' +
       '</div>' +
-      (cat.sub.length ? htmlSelettore('sub') : '') +
+      (o.modo === 'nuovo' ? '' : htmlSelettore('cat')) +
+      '<div id="ns-sub-box">' + (ns.subs.length ? htmlSelettore('sub') : '') + '</div>' +
       (conti.length >= 2 ? htmlSelettore('conto') : '') +
       '<div class="importo" id="ns-importo" aria-live="polite"></div>' +
       '<label class="campo vetro"><span class="ms" aria-hidden="true">edit_note</span><span class="sr">Nota</span>' +
-        '<input id="ns-nota" type="text" autocomplete="off" enterkeyhint="done" placeholder="Nota"></label>' +
+        '<input id="ns-nota" type="text" autocomplete="off" enterkeyhint="done" placeholder="Nota" value="' + esc(nota.testo) + '"></label>' +
       htmlTag() +
       '<div class="tastierino">' + tasti.map(function (k) {
         if (k === 'canc') return '<button type="button" class="tasto vetro-leggero" data-tasto="canc" aria-label="Cancella"><span class="ms" aria-hidden="true">backspace</span></button>';
         const op = OPERATORI.indexOf(k) >= 0;
         return '<button type="button" class="tasto ' + (op ? 'op' : 'vetro-leggero') + '" data-tasto="' + k + '"' + (op ? ' aria-label="' + nomiOp[k] + '"' : '') + '>' + k + '</button>';
       }).join('') + '</div>' +
-      '<button type="button" class="pulsante pieno" data-azione="salva-movimento"><span class="ms" aria-hidden="true">check</span>Salva ' + (ns.tipo === 'Entrata' ? 'entrata' : 'spesa') + '</button>',
+      '<button type="button" class="pulsante pieno" data-azione="salva-movimento"><span class="ms" aria-hidden="true">check</span>' +
+        (o.modo === 'modifica' ? 'Salva modifiche' : 'Salva ' + cosa) + '</button>',
       function () { ns = null; }
     );
     renderImporto();
@@ -941,26 +1294,33 @@
     if (!ns.conti.length) { avviso('Nessun conto di spesa attivo nel foglio Conti', true); return; }
     const testoNota = ($('#ns-nota').value || '').trim().replace(/\s+/g, ' ');
     const tags = ((stato.dati && stato.dati.tag) || []).map(function (t) { return t.tag; }).filter(function (t) { return ns.tag.has(t); });
+    const cat = ns.cats[ns.catIdx];
     const mov = {
       data: ns.data,
       tipo: ns.tipo,
       conto: ns.conti[ns.contoIdx].nome,
-      categoria: ns.cat.nome,
-      sottocategoria: ns.cat.sub.length ? ns.cat.sub[ns.subIdx] : null,
+      categoria: cat.nome,
+      sottocategoria: ns.subs.length ? ns.subs[ns.subIdx] : null,
       importo: importo,
       nota: [testoNota].concat(tags).filter(Boolean).join(' ')
     };
     const futura = mov.data > isoOggi();
     const cosa = mov.tipo === 'Entrata' ? 'Entrata' : 'Spesa';
+    const modo = ns.modo, id = ns.id, fonte = ns.fonte;
     chiudiPannello();
     try {
-      await salvaMovimento(mov);
+      if (modo === 'modifica') await accoda('update', id, mov, fonte);
+      else await salvaMovimento(mov);
     } catch (err) {
       avviso('Non salvata: ' + err.message, true);
       return;
     }
     const offline = navigator.onLine === false ? ' · in attesa di invio' : '';
-    avviso((futura ? cosa + ' programmata per ' + etichettaData(mov.data).replace(/^\w+, /, '') : cosa + ' salvata · ' + euro(importo)) + offline);
+    let msg;
+    if (modo === 'modifica') msg = 'Modifiche salvate';
+    else if (futura) msg = cosa + ' programmata per ' + etichettaData(mov.data).replace(/^\w+, /, '');
+    else msg = cosa + ' salvata · ' + euro(importo);
+    avviso(msg + offline);
   }
 
   /* Trascinamento dei selettori: il dito sposta la fila, al rilascio si avanza di tante voci quante ne ha percorse. */
@@ -1004,7 +1364,32 @@
     const el = ev.target.closest('[data-azione]');
     if (!el || el.disabled) return;
     const a = el.dataset.azione;
+    if (a !== 'elimina' && a !== 'duplica') {
+      // Un tocco altrove chiude le righe aperte; sulla riga aperta la chiude soltanto
+      const aperta = el.closest('.mov-scorre.aperta');
+      if (document.querySelector('.mov-scorre.aperta')) { chiudiRighe(); if (aperta) return; }
+    }
     if (a === 'nuovo') apriNuovo(el.dataset.cat);
+    else if (a === 'modifica') {
+      const m = el.dataset.id ? trovaMovimento(el.dataset.id) : null;
+      if (m) apriMovimento({ modo: 'modifica', mov: m });
+      else avviso('Movimento senza ID: si può modificare solo nel foglio', true);
+    }
+    else if (a === 'duplica') { const m = trovaMovimento(el.dataset.id); chiudiRighe(); if (m) apriMovimento({ modo: 'duplica', mov: m }); }
+    else if (a === 'elimina') {
+      if (!el.classList.contains('conferma')) { el.classList.add('conferma'); el.querySelector('.mov-az-testo').textContent = 'Conferma'; }
+      else eliminaMovimento(el.dataset.id);
+    }
+    else if (a === 'invia') invia();
+    else if (a === 'filtro-mese') apriFiltroMese();
+    else if (a === 'filtro-cat') apriFiltroCat();
+    else if (a === 'filtro-conto') apriFiltroConto();
+    else if (a === 'scegli-mese' || a === 'scegli-cat' || a === 'scegli-conto') {
+      const k = { 'scegli-mese': 'ym', 'scegli-cat': 'cat', 'scegli-conto': 'conto' }[a];
+      stato.filtri[k] = el.dataset.valore || null;
+      chiudiPannello();
+      render();
+    }
     else if (a === 'mese') { stato.ym = ymSposta(stato.ym || ymOggi(), +el.dataset.passo); if (stato.ym > ymOggi()) stato.ym = ymOggi(); render(); }
     else if (a === 'tipo') { stato.tipo = el.dataset.tipo; render(); }
     else if (a === 'scorri') scorriSelettore(el.dataset.sel, +el.dataset.passo);
@@ -1040,7 +1425,10 @@
     if (inp && inp.showPicker) { try { inp.showPicker(); } catch (e) { /* già aperto */ } }
   });
   document.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Enter' && ev.target.id === 'ns-nota') ev.target.blur();
+    if (ev.key === 'Enter' && (ev.target.id === 'ns-nota' || ev.target.id === 'mov-cerca')) ev.target.blur();
+  });
+  document.addEventListener('input', function (ev) {
+    if (ev.target.id === 'mov-cerca') { stato.filtri.testo = ev.target.value; renderListaMovimenti(); }
   });
 
   $('#scrim').addEventListener('click', chiudiPannello);
