@@ -1,14 +1,14 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (3)
+Ultimo aggiornamento: 25/11/2026 (4)
 
-**Fase attuale**: backend installato e pubblicato; frontend iniziato (Impostazioni e lettura dati), da provare con il vero Bilanci API.
+**Fase attuale**: backend e app pubblicati e collegati (Impostazioni e lettura dati provate con il vero Bilanci API). Prossimo passo: schermata Inserisci.
 
 ## Da dove riprendere
 
 1. **Su un altro PC**: `git pull` (o clona il repo). Indirizzo e chiave di Bilanci API non sono nel repo: tienili a portata (URL `/exec` del deployment e `API_KEY` dalle proprietà dello script).
-2. **Attivare GitHub Pages** come in `README-FE.md` (Source: GitHub Actions), poi aprire l'app pubblicata; in alternativa provarla in locale con `python -m http.server 8000` dentro `frontend/`.
-3. **Provare con il vero Bilanci API**: pannello Collegamento → Prova → Salva. Controllare in Impostazioni: "Bilanci API" Collegato, foglio `Dati nummo (prova)`, numeri di Categorie e Conti e tag uguali al foglio. Se c'è un errore, annotare il messaggio esatto.
+2. **App pubblicata** su GitHub Pages e collegata a Bilanci API (foglio `Dati nummo (prova)`). Su un nuovo dispositivo: aprire l'app e compilare il pannello Collegamento.
+3. **Modificare `pages.yml`** richiede un token GitHub con il permesso Workflows (fine-grained) o `workflow` (classic).
 4. **Confermare o correggere** le tre scelte "Da confermare (Impostazioni)" nei Punti aperti.
 5. **Passo successivo di sviluppo**: schermata **Inserisci** (anello del mese e categorie in cornice 5×4), vedi `docs/design_v3.md` e `docs/design/LGInserisci.dc.html`. I dati servono già tutti: arrivano da `bootstrap` e sono in `stato.dati` in `frontend/app.js` (funzioni `macroCategorie()` e `movimentiDivisi()`).
 
@@ -24,7 +24,7 @@ Ultimo aggiornamento: 25/11/2026 (3)
 ## Da fare
 
 ### 1. Preparazione
-- [ ] Attivare GitHub Pages (Settings → Pages → Source: **GitHub Actions**; il workflow `.github/workflows/pages.yml` pubblica `frontend/` a ogni push su `main`)
+- [x] Attivare GitHub Pages (Settings → Pages → Source: **GitHub Actions**; il workflow `.github/workflows/pages.yml` pubblica `frontend/` a ogni push su `main`)
 
 ### 2. Backend – Bilanci API (`backend/`)
 - [x] `Code.gs`: `doGet` (ping, bootstrap, mese), `doPost` (add / update / delete con ID), chiave, lock
@@ -38,7 +38,7 @@ Ultimo aggiornamento: 25/11/2026 (3)
 ### 3. Frontend – web app (`frontend/`)
 - [x] Impostazioni: indirizzo e chiave, test del collegamento (provato solo con un Bilanci API finto)
 - [x] Lettura dati: categorie, conti, tag, movimenti recenti, copia in IndexedDB (provato solo con un Bilanci API finto)
-- [ ] Prova di Impostazioni e bootstrap con il vero Bilanci API
+- [x] Prova di Impostazioni e bootstrap con il vero Bilanci API (19 categorie, 69 sottocategorie, 4 conti, 5 tag)
 - [ ] Inserisci: anello del mese e categorie in cornice
 - [ ] Pannello Nuova spesa: selettore sottocategoria, importo, nota, tag, tastierino, data
 - [ ] Salvataggio locale e coda offline (IndexedDB), invio in background
@@ -69,6 +69,7 @@ Ultimo aggiornamento: 25/11/2026 (3)
 
 ## Registro
 
+- **25/11/2026** – App pubblicata su GitHub Pages con il nuovo workflow; Impostazioni e bootstrap provati con il vero Bilanci API.
 - **25/11/2026** – Workflow `pages.yml` fallito ("No artifacts named github-pages"): diviso in due job, prepara e pubblica, e aggiornate le azioni (`checkout@v5`, `upload-pages-artifact@v4`).
 - **25/11/2026** – Aggiunta la sezione "Da dove riprendere".
 - **25/11/2026** – README nella radice: `README.md` (presentazione), `README-BE.md` (era `backend/README.md`), `README-FE.md` (era `frontend/README.md`).
