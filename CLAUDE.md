@@ -37,7 +37,7 @@ docs/                   specifiche (vedi sopra)
 
 - Progetto Apps Script **separato** dalla dashboard esistente. Apre il foglio con `SpreadsheetApp.openById(ID)`; ID e chiave stanno in `PropertiesService` (proprietà script `SHEET_ID`, `SHEET_NAME`, `API_KEY`).
 - Pubblicato come app web: "Esegui come: me", "Chi ha accesso: Chiunque". Dopo ogni modifica: Gestisci deployment → matita → Nuova versione (l'URL non cambia).
-- `doGet(e)`: `action=bootstrap` restituisce JSON con categorie attive, conti, tag e movimenti degli ultimi 3 mesi più quelli futuri.
+- `doGet(e)`: `action=ping` (stato e foglio in uso); `action=bootstrap` restituisce JSON con categorie attive, conti, tag e movimenti degli ultimi 3 mesi più quelli futuri; `action=mese` (`ym=AAAA-MM`) e `action=periodo` (`da`, `a` in `AAAA-MM-GG`) i movimenti dei periodi più vecchi.
 - `doPost(e)`: corpo JSON in `text/plain` (evita il preflight CORS) con `key` e una lista di operazioni `add` / `update` / `delete` identificate da ID. Usa `LockService`; un `add` con ID già presente non duplica.
 - Ogni risposta: `ContentService` JSON con `ok` ed eventuale `error`.
 - Scrive in "Dati 1Money" con le stesse colonne del CSV di 1Money più `ID`, `INSERITO_IL`, `FONTE` (`app`), `MODIFICATO_IL`. Formato esatto (data `dd/mm/yy`, importo positivo con punto decimale, riga inserita in cima come testo) in `docs/overview_funzionale.md`, sezione Fogli e struttura dati. Il foglio di destinazione è nella proprietà `SHEET_NAME`: durante la prova "Dati nummo (prova)", poi "Dati 1Money".
@@ -49,7 +49,9 @@ docs/                   specifiche (vedi sopra)
 - Salvataggio prima in locale (IndexedDB) con ID e stato "in attesa", poi invio in background; ritenta all'apertura, al ritorno della rete e a ogni salvataggio.
 - Spese con data futura: entrano subito nel foglio, ma nell'app stanno in "In programma" e sono escluse da anello e totali fino al giorno indicato.
 - Categorie salvate come testo "Macro (Sub)": cambiare lo schema non tocca lo storico; le categorie non più attive si mostrano in grigio sui movimenti vecchi.
-- Riferimento schermo: Galaxy A54 (412×892), layout fluido.
+- Periodo come in 1Money, uno solo per Inserisci e Movimenti (mese, anno, settimana, giorno, oggi, intervallo, tutto il periodo), salvato sul dispositivo.
+- La pagina non scorre mai: ogni schermata ha una parte in alto (`.testata`) che galleggia sopra un'area (`.scorre`) che scorre solo se serve. Le misure si basano sull'area utile tra barra di stato e barra di navigazione, non sull'altezza dello schermo.
+- Riferimento schermo: Galaxy A54 (412×892), layout fluido. Prima di consegnare, prova anche con le barre di sistema simulate (app installata da bordo a bordo).
 
 ## Come lavorare
 

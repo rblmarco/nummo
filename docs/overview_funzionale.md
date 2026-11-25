@@ -1,6 +1,6 @@
 # App spese – Overview funzionale
 
-Aggiornata al 23/11/2026. Specifica funzionale dell'app **nummo**.
+Aggiornata al 25/11/2026. Specifica funzionale dell'app **nummo**.
 
 ## Obiettivo e principi
 
@@ -31,7 +31,7 @@ Dashboard Apps Script di oggi – solo lettura, invariata
 
 - Repository GitHub pubblico (GitHub Pages gratuito lo richiede): nel codice non ci sono dati né chiavi.
 - Bilanci API è separato dalla dashboard perché va pubblicato con accesso "Chiunque": nel progetto della dashboard renderebbe pubblica anche la dashboard.
-- Chiamate dalla web app: GET per leggere, POST con `Content-Type: text/plain` (evita il preflight CORS) per scrivere; ogni richiesta porta la chiave.
+- Chiamate dalla web app: GET per leggere (`ping`, `bootstrap`, `mese`, `periodo`), POST con `Content-Type: text/plain` (evita il preflight CORS) per scrivere (operazioni `add` / `update` / `delete` con ID); ogni richiesta porta la chiave.
 - La chiave sta nelle proprietà dello script (`PropertiesService`), non in un foglio né nel codice.
 
 ## Fogli e struttura dati
@@ -56,40 +56,59 @@ Le righe storiche ricevono un ID una volta sola.
 
 **Categorie** – una riga per sottocategoria, caricata all'inizio da `docs/categorie.md`: Tipo (Spesa/Entrata), Categoria, Sottocategoria (vuota = nessuna), Attiva (SÌ/NO), Ordine, Icona, Colore.
 
-**Conti** – Nome, Tipo (Spesa / Investimento), Attivo, Ordine, Predefinito. Per ora un solo conto di spesa, **Liquidità** (nome provvisorio), predefinito: tutte le spese partono da lì. I conti di investimento (es. InvestiPiù) stanno nel foglio; se e come mostrarli nell'app è un punto aperto (vedi sotto). I conti dei movimenti storici restano come sono.
+**Conti** – Nome, Tipo (Spesa / Investimento), Attivo, Ordine, Predefinito. Per ora un solo conto di spesa, **Liquidità**, predefinito: tutte le spese partono da lì. I conti di investimento (es. InvestiPiù) stanno nel foglio: li userà la voce Sposta (vedi Dopo l'app principale). I conti dei movimenti storici restano come sono.
 
 **Tag** – Tag, Etichetta, Attivo: `#straordinaria`, `#scooter`, `#moto`, `#auto1`, `#auto2`, `#casa2`.
 
 ## Schermate
 
-Tre schermate dalla barra in basso (Inserisci, Movimenti, Impostazioni) più il pannello Nuova spesa che sale da Inserisci. Stile: v3 dei mockup, vetro traslucido scuro e piatto. Dettagli grafici in `docs/design_v3.md`.
+Tre schermate dalla barra in basso (Inserisci, Movimenti, Impostazioni) più il pannello Nuova spesa che sale da Inserisci e da Movimenti. Stile: v3 dei mockup, vetro traslucido scuro e piatto. Dettagli grafici in `docs/design_v3.md`.
+
+- **Niente scorrimento inutile**: la pagina intera non scorre mai. Ogni schermata ha in alto una parte fissa che galleggia sul contenuto (vetro sfocato, come la barra in basso) e sotto un'area che scorre solo se il contenuto non ci sta.
+- **Area utile**: con l'app installata la pagina va da bordo a bordo; le misure si basano sullo spazio tra barra di stato e barra di navigazione, non sull'altezza dello schermo.
 
 ### 1. Inserisci
-- In alto il mese con frecce e l'interruttore Spesa / Entrata.
-- Al centro un anello con le spese del mese per categoria, il totale speso e sotto le entrate.
-- Attorno, in cornice 5 colonne × 4 righe, le categorie attive con icona, nome e speso del mese. Ordine dalla colonna Ordine del foglio Categorie.
-- Un tocco su una categoria apre il pannello Nuova spesa.
+- In alto il titolo ("Spese" o "Entrate"), la capsula di sincronizzazione, il periodo con le frecce (vedi Periodo) e l'interruttore Spesa / Entrata.
+- Capsula di sincronizzazione: Sincronizzato, N in attesa (ambra), Offline, Non collegato, Invio…; un tocco invia la coda e aggiorna dal foglio.
+- Al centro un anello con gli importi del periodo per categoria, il totale e sotto il totale dell'altro tipo (Spesa: spese ed entrate; Entrata: il contrario). Le date future sono escluse.
+- Attorno, in cornice 5 colonne × 4 righe, le categorie attive del tipo scelto con icona, nome e importo del periodo, nell'ordine della colonna Ordine del foglio Categorie: prima riga, lati, ultima riga. Le categorie di entrata occupano la cornice dall'alto. Oltre la 14ª: righe da 5 sotto la cornice, e solo allora la cornice scorre.
+- Le righe della cornice si stringono per stare nello spazio utile; la scritta "Tocca una categoria…" sparisce solo se lo spazio è poco.
+- Categorie non più attive: nessuna casella, ma i loro importi contano nel totale (segmento grigio nell'anello).
+- Un tocco su una categoria apre il pannello Nuova spesa. Data proposta: oggi se il periodo mostrato lo contiene, altrimenti il suo ultimo giorno.
+
+### Periodo (Inserisci e Movimenti)
+- Un solo periodo per tutta l'app, come in 1Money: cambiarlo in una schermata lo cambia anche nell'altra. In Inserisci è l'etichetta tra le frecce, in Movimenti il primo filtro; entrambi aprono lo stesso pannello Periodo.
+- Pannello con 7 voci: Seleziona l'intervallo (due date, Dal e Al), Tutto il periodo, Seleziona un giorno (calendario del telefono), Settimana (lunedì–domenica), Oggi, Anno, Mese. Settimana, Anno e Mese partono da quelli in corso.
+- Frecce: spostano di un mese, anno, settimana o giorno; spente per Intervallo e Tutto il periodo; la freccia avanti si ferma al periodo che contiene oggi.
+- Alla riapertura resta l'ultimo periodo scelto; "Oggi" vale sempre per il giorno in cui si apre l'app.
+- I periodi più vecchi del bootstrap (circa 3 mesi) si scaricano con `mese` o `periodo` e restano sul dispositivo, tranne Tutto il periodo. Se non si possono scaricare compare "Periodo non disponibile" con il pulsante Riprova.
 
 ### 2. Nuova spesa (pannello dal basso)
-- Alto quanto il contenuto, sopra Inserisci oscurata.
-- Intestazione: categoria, data in una capsula (anche futura), pulsante chiudi.
-- Due selettori a scorrimento uno sopra l'altro: sottocategoria e conto. Scelta al centro (capsula grande), opzioni ai lati sfumate; si scorre col dito, lista circolare. Categorie senza sottocategorie: solo il conto. Il selettore del conto compare solo con almeno due conti di spesa attivi: con il solo conto Liquidità non si vede.
+- Alto quanto il contenuto, sopra la schermata oscurata. Se non ci sta si compatta (spazi e tasti più piccoli); scorre solo come ultima risorsa. Le sue parti non si sovrappongono mai.
+- Intestazione: categoria, data in una capsula (calendario del telefono, anche futura: capsula in accento), pulsante chiudi.
+- Due selettori a scorrimento uno sopra l'altro: sottocategoria e conto. Scelta al centro (capsula grande), opzioni ai lati sfumate; si trascinano col dito (una voce ogni circa 80 px) o si toccano le voci laterali; lista circolare, con 2 sole voci si vede solo quella a destra. Categorie senza sottocategorie: solo il conto. Il selettore del conto compare solo con almeno due conti di spesa attivi: con il solo conto Liquidità non si vede.
+- Sottocategoria sempre scelta: si propone la prima dell'elenco.
 - Importo grande su una riga, nota sulla riga sotto. Nessun suggerimento automatico.
-- Tag su due righe, selezionabili.
-- Tastierino con virgola e operazioni ÷ × − +, poi Salva spesa.
+- Tag su due righe, selezionabili; si salvano in coda alla nota, nell'ordine del foglio Tag.
+- Tastierino con virgola e operazioni ÷ × − +: al massimo 2 decimali, il risultato del calcolo compare sotto l'importo; un importo zero o negativo non si salva. Poi Salva spesa (o Salva entrata).
+- In modifica e in duplica (da Movimenti) c'è anche il selettore Categoria sopra la sottocategoria; in modifica il pulsante è "Salva modifiche".
 
 ### 3. Movimenti
-- Ricerca nelle note, filtri mese / categoria / conto.
-- Avviso con i movimenti in attesa di invio e pulsante per inviarli.
-- In cima "In programma" (spese future), bordo tratteggiato.
-- Lista per giorno con totale del giorno. Tocco = modifica (stesso pannello); scorrimento = duplica o elimina.
-- Categoria non più attiva: visibile in grigio, non cambia finché non la cambi.
+- In alto, fermi: titolo, ricerca nelle note del periodo, filtri periodo / categoria / conto (il filtro Conto elenca i conti di spesa più quelli presenti nel periodo).
+- Avviso con i movimenti in attesa di invio (ed eventuale errore) e pulsante "Invia ora".
+- In cima "In programma" (tutte le date future), bordo tratteggiato, quando il periodo arriva fino a oggi.
+- Lista per giorno con totale del giorno. Titolo della riga: la nota senza tag (i tag come etichette), altrimenti sottocategoria o categoria; sotto "Categoria › Sottocategoria", con il conto solo se non è l'unico conto di spesa.
+- Tocco = modifica nello stesso pannello. Scorrimento verso sinistra: Duplica (apre il pannello compilato con la data di oggi) ed Elimina (chiede un secondo tocco su "Conferma").
+- Categorie, sottocategorie e conti non più attivi: riga in grigio; in modifica restano scelti finché non li cambi. Movimenti vecchi senza sottocategoria: "Nessuna".
+- Righe senza ID (storiche, prima di `assegnaID()`): visibili ma non modificabili.
+- Periodi lunghi: 300 righe alla volta, poi "Mostra altri movimenti".
 
 ### 4. Impostazioni
-- Prima apertura: indirizzo di Bilanci API e chiave, una volta per dispositivo.
+- Prima apertura: pannello dal basso "Collegamento" con indirizzo di Bilanci API, chiave e indirizzo della dashboard (facoltativo), una volta per dispositivo; pulsanti Prova e Salva.
 - Sincronizzazione: ultima volta, in attesa, "Sincronizza ora".
 - Dati dal foglio: categorie, conti, tag (automatico all'apertura o a mano).
-- Conto preselezionato, link alla dashboard.
+- Conto preselezionato (il conto predefinito del foglio Conti, in sola lettura), link alla dashboard.
+- Errori mostrati in ambra: la palette non ha un rosso.
 
 ## Categorie che cambiano nel tempo
 
@@ -109,7 +128,7 @@ Ogni movimento salva categoria e sottocategoria come testo. Cambiare lo schema n
 3. Bilanci API controlla la chiave, usa un lock, scrive; se l'ID esiste già non duplica.
 4. L'app segna il movimento come sincronizzato.
 
-Modifiche ed eliminazioni seguono la stessa coda. All'apertura l'app scarica categorie, conti, tag e movimenti recenti (ultimi 3 mesi). Limiti: 1–3 s per invio (in background); conflitti tra due dispositivi offline: vince l'ultimo; cancellare i dati del browser prima di sincronizzare perde la coda.
+Modifiche ed eliminazioni seguono la stessa coda, con una sola voce per ID: un movimento non ancora inviato e poi modificato resta un `add`; se lo si elimina prima dell'invio sparisce dalla coda e al foglio non arriva nulla. L'app ritenta anche al ritorno della rete e quando torna in primo piano. All'apertura l'app scarica categorie, conti, tag e movimenti recenti (ultimi 3 mesi e futuri); i periodi più vecchi si scaricano a richiesta (vedi Periodo). Limiti: 1–3 s per invio (in background); conflitti tra due dispositivi offline: vince l'ultimo; cancellare i dati del browser prima di sincronizzare perde la coda.
 
 ## Spese programmate
 
@@ -127,15 +146,23 @@ Decisione: diventano effettive da sole, senza conferma.
 
 ## Fuori dalla v1
 
-Saldi e gestione conti, trasferimenti tra conti (deciso: no), grafici e confronti (dashboard), budget, promemoria, scontrini, valute diverse da EUR, più utenti. Idee v2: spese rapide da `RICORRENTI`, promemoria ricorrenti, widget.
+Saldi e gestione conti, grafici e confronti (dashboard), budget, promemoria, scontrini, valute diverse da EUR, più utenti. Idee v2: spese rapide da `RICORRENTI`, promemoria ricorrenti, widget.
 
 ## Decisioni prese
 
-- **Trasferimenti tra conti**: no, non servono nell'app.
-- **Conto**: un solo conto di spesa, Liquidità (nome provvisorio), sempre preselezionato.
+- **Conto**: un solo conto di spesa, Liquidità (nome definitivo), sempre preselezionato.
+- **Investimenti**: si registreranno in nummo come trasferimenti, con la voce Sposta, dopo la fine dell'app principale (sostituisce "niente trasferimenti tra conti" del 24/11).
 - **Nome**: nummo (app e repo).
 - **Spese future**: diventano effettive da sole il giorno indicato.
+- **Periodo**: come in 1Money, uno solo per Inserisci e Movimenti, con memoria dell'ultimo scelto.
+- **Schermate**: la pagina non scorre mai; parte in alto fissa e galleggiante, area sotto che scorre solo se serve.
+
+L'elenco completo e datato delle decisioni è in `STATO.md` del repo.
+
+## Dopo l'app principale
+
+- **Sposta**: terza voce dell'interruttore, Spesa / Entrata / Sposta, per spostare soldi tra Liquidità e i conti di investimento, nei due sensi. Scrive una riga come 1Money: TIPOLOGIA `Trasferimento`, DAL CONTO, AL CONTO, importo, data, nota; niente categoria. La dashboard ignora i `Trasferimento` e calcola il risparmio come entrate meno spese, quindi i suoi numeri non cambiano. Serve: pannello semplificato (da conto, a conto, importo, data, nota) con anteprima prima del codice; Bilanci API che scrive e legge anche `Trasferimento`; spostamenti visibili in Movimenti. Le spese in Banca e pratiche › Investimenti (commissioni) restano spese.
 
 ## Punti aperti
 
-- **Investimenti**: oggi in 1Money un investimento si registra come trasferimento da un conto bancario al conto di investimento (es. InvestiPiù). Da decidere se l'app deve permetterlo, per esempio con un tipo "Investimento" che scrive un `Trasferimento` da Liquidità al conto scelto, oppure se gli investimenti restano fuori dall'app. Verificato: la dashboard ignora i `Trasferimento` e calcola il risparmio come entrate meno spese, quindi registrare un investimento come trasferimento non cambia i suoi numeri; servirebbe solo a tenerne traccia. Le spese in Banca e pratiche › Investimenti (commissioni) restano spese.
+Nessuno al momento.

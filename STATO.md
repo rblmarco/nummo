@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (15)
+Ultimo aggiornamento: 25/11/2026 (18)
 
 **Fase attuale**: Movimenti scritta e provata con un Bilanci API finto (lista, In programma, modifica, duplica, elimina, ricerca, filtri, coda offline per update e delete). Prossimo passo: prova di Movimenti sul telefono, poi service worker.
 
@@ -9,9 +9,8 @@ Ultimo aggiornamento: 25/11/2026 (15)
 1. **Su un altro PC**: `git pull` (o clona il repo). Indirizzo e chiave di Bilanci API non sono nel repo: tienili a portata (URL `/exec` del deployment e `API_KEY` dalle proprietà dello script).
 2. **App pubblicata** su GitHub Pages e collegata a Bilanci API (foglio `Dati nummo (prova)`). Su un nuovo dispositivo: aprire l'app e compilare il pannello Collegamento.
 3. **Modificare `pages.yml`** richiede un token GitHub con il permesso Workflows (fine-grained) o `workflow` (classic).
-4. **Bilanci API da aggiornare**: `backend/Code.gs` ha la nuova lettura `periodo`. Va incollato nel progetto Apps Script, poi Gestisci deployment → matita → Nuova versione. Finché non lo fai, anno, settimana, giorno, intervallo e tutto il periodo più vecchi di circa 3 mesi mostrano "Aggiorna Bilanci API".
-5. **Da provare sul telefono**: in Movimenti modificare, duplicare ed eliminare qualche riga del foglio `Dati nummo (prova)` e controllare nel foglio che `update` aggiorni la riga giusta (con MODIFICATO_IL) e `delete` la tolga; provare anche in modalità aereo.
-6. **Passo successivo di sviluppo**: service worker `frontend/sw.js` (l'app si apre senza rete) e prova di installazione sul telefono.
+4. **Da provare sul telefono**: in Movimenti modificare, duplicare ed eliminare qualche riga del foglio `Dati nummo (prova)` e controllare nel foglio che `update` aggiorni la riga giusta (con MODIFICATO_IL) e `delete` la tolga; provare anche in modalità aereo.
+5. **Passo successivo di sviluppo**: service worker `frontend/sw.js` (l'app si apre senza rete) e prova di installazione sul telefono.
 
 ## Fatto
 
@@ -48,7 +47,7 @@ Ultimo aggiornamento: 25/11/2026 (15)
 - [x] Coda offline anche per `update` e `delete`: una sola voce per ID; un movimento mai inviato modificato resta un `add`, eliminato sparisce dalla coda (provato solo con un Bilanci API finto)
 - [ ] Prova di Movimenti sul telefono con il vero Bilanci API
 - [x] Periodo come in 1Money, uno solo per Inserisci e Movimenti: intervallo, tutto il periodo, giorno, settimana, oggi, anno, mese; frecce, memoria dell'ultimo periodo, lettura `periodo` in Bilanci API (provato solo con un Bilanci API finto)
-- [ ] Aggiornare Bilanci API (nuova versione del deployment) e provare i periodi sul telefono
+- [x] Aggiornare Bilanci API (nuova versione del deployment) e provare i periodi sul telefono
 - [x] PWA: manifest e icone (anello sfumato con la n, sorgente `frontend/icons/icona.svg`)
 - [ ] PWA: service worker (uso offline) e prova di installazione sul telefono
 
@@ -93,6 +92,8 @@ Ultimo aggiornamento: 25/11/2026 (15)
 
 ## Registro
 
+- **25/11/2026** – Bilanci API aggiornato (mancava la Nuova versione del deployment): i periodi funzionano sul telefono. Allineati i documenti di specifica alle decisioni di oggi: `docs/overview_funzionale.md` (periodo, schermate senza scorrimento, Nuova spesa, Movimenti, Impostazioni, coda, Liquidità definitivo, Sposta dopo l'app principale, nessun punto aperto), `docs/design_v3.md` (area utile, testata, riga e pannello Periodo, capsula di sincronizzazione, righe scorrevoli, pannello compatto), `CLAUDE.md` (azioni di lettura, periodo, layout); stesse modifiche nelle copie del progetto Claude.
+- **25/11/2026** – Periodi provati dall'utente: il pannello funziona, ma Anno risponde ancora "Aggiorna Bilanci API" (il deployment in uso non ha l'azione `periodo`). Corretto anche un difetto dell'app: un periodo non scaricato non veniva più richiesto fino alla riapertura; ora c'è il pulsante Riprova e si riprova a ogni cambio di periodo e a ogni sincronizzazione.
 - **25/11/2026** – Periodo come in 1Money: `stato.periodo` salvato in `localStorage` (`nummo.periodo`), pannello Periodo, frecce, `movimentiDelPeriodo()` e `caricaPeriodo()` al posto di quelli per mese; Movimenti senza il filtro mese. Bilanci API: nuova azione `periodo` (`da`, `a`), descritta in `README-BE.md`. Provato in Chrome headless con un Bilanci API finto (25 controlli sui periodi, più tutte le prove precedenti) e la funzione `movimentiPeriodo_` con Node.
 - **25/11/2026** – Testata galleggiante in tutte le schermate: `.testata` in posizione assoluta sopra `.scorre`, che occupa tutta la schermata e parte da sotto la testata grazie a `--testata-h` (misurata con un `ResizeObserver`). Provato in Chrome headless simulando il Galaxy A54, più le prove precedenti.
 - **25/11/2026** – Corretto il pannello in modifica sul telefono: con tre selettori il contenuto non ci stava e il selettore Categoria veniva schiacciato sotto la Sottocategoria. Ora le parti del pannello non si schiacciano mai; se non c'entrano il pannello si compatta in due livelli (`compatto`, `compattissimo`) e solo come ultima risorsa scorre. Provato simulando il Galaxy A54 con uno e due conti, Chrome a 780 e 700 px.
