@@ -348,7 +348,7 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
 
 .cornice {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-auto-rows: 120px;
   grid-template-rows: repeat(4, 120px);
   gap: 8px 2px;
@@ -356,42 +356,42 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
   margin: 0 -4px;
 }
 .cella {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   min-width: 0;
 }
 .cella:active .cella-icona { transform: scale(.94); }
 .cella-icona {
-  width: 48px; height: 48px; border-radius: 24px;
+  width: 44px; height: 44px; border-radius: 22px;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid transparent;
   backdrop-filter: blur(20px) saturate(120%);
   -webkit-backdrop-filter: blur(20px) saturate(120%);
   transition: transform .1s;
 }
-.cella-icona .ms { font-size: 24px; }
+.cella-icona .ms { font-size: 22px; }
 .cella-nome {
-  height: 28px; display: flex; align-items: center; justify-content: center;
+  min-height: 14px; display: flex; align-items: center; justify-content: center;
   font: 500 11.5px/14px var(--font); text-align: center;
   width: calc(100% + 2px);
 }
 .cella-importo { font: 600 12px/15px var(--font); white-space: nowrap; }
 
 .anello {
-  grid-row: 2 / span 2; grid-column: 2 / span 3;
+  grid-row: 2 / span 2; grid-column: 2 / span 2;
   position: relative;
   display: flex; align-items: center; justify-content: center;
 }
 .anello-svg { width: min(224px, 100%); height: auto; aspect-ratio: 1; }
 .anello-centro {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  height: min(188px, 84%); aspect-ratio: 1; border-radius: 50%; cursor: pointer;
+  height: min(166px, 84%); aspect-ratio: 1; border-radius: 50%; cursor: pointer;
   transition: transform .12s, background .12s;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   text-align: center; padding: 0 12px;
 }
-.anello-etichetta { font: 500 13px/16px var(--font); color: var(--t2); }
-.anello-totale { font: 600 26px/32px var(--font); letter-spacing: -.3px; white-space: nowrap; }
-.anello-altro { font: 400 13px/16px var(--font); color: var(--t2); }
+.anello-etichetta { font: 500 12px/15px var(--font); color: var(--t2); }
+.anello-totale { font: 600 21px/26px var(--font); letter-spacing: -.3px; white-space: nowrap; }
+.anello-altro { font: 400 12px/15px var(--font); color: var(--t2); }
 
 .anello-centro:active { transform: translate(-50%, -50%) scale(.96); background: rgba(255, 255, 255, .04); }
 .riprova { margin-top: 6px; height: 30px; padding: 0 14px; border-radius: 15px; background: rgba(125, 211, 192, .156); color: var(--accento); font: 600 13px/16px var(--font); pointer-events: auto; }
@@ -616,19 +616,21 @@ button.riga:active, a.riga:active { background: rgba(255, 255, 255, .05); }
 #s-inserisci .scorre { display: flex; flex-direction: column; }
 #s-inserisci .cornice {
   flex: 0 1 auto; min-height: 0;
-  grid-template-rows: repeat(4, minmax(80px, 120px));
+  grid-template-rows: repeat(5, minmax(80px, 108px));
+  grid-auto-rows: 108px;
+  gap: 10px 4px; margin: 0;
 }
 #s-inserisci .anello { min-height: 0; }
-#s-inserisci .anello-svg { width: auto; height: auto; max-width: 100%; max-height: min(224px, 100%); }
+#s-inserisci .anello-svg { width: auto; height: auto; max-width: 100%; max-height: min(196px, 100%); }
 #s-inserisci .suggerimento { flex-shrink: 0; }
 
 /* Spazio stretto, misurato sull'area utile di Inserisci (non sull'altezza dello schermo) */
 #s-inserisci .scorre { container-type: size; container-name: inserisci; }
-@container inserisci (max-height: 490px) {
+@container inserisci (max-height: 500px) {
   .suggerimento { display: none; }
-  .cornice { padding-top: 10px; row-gap: 4px; }
-  .cella-icona { width: 44px; height: 44px; }
-  .cella-icona .ms { font-size: 22px; }
+  .cornice { padding-top: 8px; row-gap: 4px !important; }
+  .cella-icona { width: 40px; height: 40px; }
+  .cella-icona .ms { font-size: 20px; }
 }
 
 /* Pannello compatto: lo attiva app.js solo se il contenuto non ci sta */

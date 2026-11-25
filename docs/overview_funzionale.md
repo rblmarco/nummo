@@ -72,7 +72,7 @@ Tre schermate dalla barra in basso (Inserisci, Movimenti, Impostazioni) più il 
 - In alto il titolo ("Spese" o "Entrate"), la capsula di sincronizzazione, il periodo con le frecce (vedi Periodo) e l'interruttore Spesa / Entrata.
 - Capsula di sincronizzazione: Sincronizzato, N in attesa (ambra), Offline, Non collegato, Invio…; un tocco invia la coda e aggiorna dal foglio.
 - Al centro un anello con gli importi del periodo per categoria, il totale e sotto il totale dell'altro tipo (Spesa: spese ed entrate; Entrata: il contrario). Le date future sono escluse.
-- Attorno, in cornice 5 colonne × 4 righe, le categorie attive del tipo scelto con icona, nome e importo del periodo, nell'ordine della colonna Ordine del foglio Categorie: prima riga, lati, ultima riga. Le categorie di entrata occupano la cornice dall'alto. Oltre la 14ª: righe da 5 sotto la cornice, e solo allora la cornice scorre.
+- Attorno, in una griglia a 4 colonne, le categorie attive del tipo scelto con icona, nome e importo del periodo, nell'ordine della colonna Ordine del foglio Categorie: 4 nella prima riga, 1 a sinistra e 1 a destra dell'anello nelle due righe centrali, 4 nella quarta riga, le ultime 2 al centro della quinta. Le categorie di entrata occupano la griglia dall'alto. Oltre la 14ª: righe da 4 sotto, e solo allora la griglia scorre.
 - Le righe della cornice si stringono per stare nello spazio utile; la scritta "Tocca una categoria…" sparisce solo se lo spazio è poco.
 - Categorie non più attive: nessuna casella, ma i loro importi contano nel totale (segmento grigio nell'anello).
 - Un tocco al centro dell'anello passa da Spesa a Entrata e viceversa, come l'interruttore.

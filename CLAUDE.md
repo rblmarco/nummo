@@ -45,7 +45,7 @@ docs/                   specifiche (vedi sopra)
 
 ## Frontend
 
-- Schermate e componenti come in `docs/design_v3.md`: Inserisci (anello al centro, categorie in cornice 5×4), pannello Nuova spesa dal basso (selettori a scorrimento per sottocategoria e conto, importo, nota, tag, tastierino), Movimenti, Impostazioni.
+- Schermate e componenti come in `docs/design_v3.md`: Inserisci (anello al centro, categorie attorno in una griglia a 4 colonne: 4, 1+1, 1+1, 4, 2), pannello Nuova spesa dal basso (selettori a scorrimento per sottocategoria e conto, importo, nota, tag, tastierino), Movimenti, Impostazioni.
 - Salvataggio prima in locale (IndexedDB) con ID e stato "in attesa", poi invio in background; ritenta all'apertura, al ritorno della rete e a ogni salvataggio.
 - Spese con data futura: entrano subito nel foglio, ma nell'app stanno in "In programma" e sono escluse da anello e totali fino al giorno indicato.
 - Categorie salvate come testo "Macro (Sub)": cambiare lo schema non tocca lo storico; le categorie non più attive si mostrano in grigio sui movimenti vecchi.

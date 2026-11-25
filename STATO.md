@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 25/11/2026 (19)
+Ultimo aggiornamento: 25/11/2026 (20)
 
 **Fase attuale**: Movimenti scritta e provata con un Bilanci API finto (lista, In programma, modifica, duplica, elimina, ricerca, filtri, coda offline per update e delete). Prossimo passo: prova di Movimenti sul telefono, poi service worker.
 
@@ -89,10 +89,13 @@ Ultimo aggiornamento: 25/11/2026 (19)
 | 25/11/2026 | Periodo come in 1Money al posto del solo mese: un solo periodo per Inserisci (etichetta tra le frecce) e Movimenti (primo filtro), stesso pannello con 7 voci; alla riapertura resta l'ultimo scelto ("Oggi" è sempre il giorno corrente). Settimana da lunedì a domenica; frecce per mese, anno, settimana e giorno, spente per intervallo e tutto il periodo, avanti fino al periodo che contiene oggi. Dal pannello mese, anno e settimana partono da quelli in corso |
 | 25/11/2026 | Periodi più vecchi di circa 3 mesi: si scaricano con `mese` o `periodo` e restano sul dispositivo (tranne "Tutto il periodo"); Movimenti mostra 300 righe alla volta con "Mostra altri movimenti"; In programma compare quando il periodo arriva fino a oggi; nuova spesa con data = oggi se il periodo lo contiene, altrimenti il suo ultimo giorno |
 | 25/11/2026 | Tasto Indietro di Android: chiude prima il pannello aperto (Nuova spesa, modifica, Periodo, Intervallo, filtri, Collegamento) e solo dopo cambia schermata. Un tocco al centro dell'anello passa da Spesa a Entrata e viceversa |
+| 25/11/2026 | Inserisci: griglia a 4 colonne al posto della cornice 5×4 (4 categorie, 1 + anello + 1, 1 + anello + 1, 4, 2 al centro), anello più piccolo (~196 px) e totale a 21 px, icone a 44 px, stessi caratteri per nomi e importi: le scritte non si toccano più. Scelta la variante A tra sette provate (anche carta centrale, semicerchio, riepilogo in alto, categorie in cerchio, carte con barra, mini anelli) |
+| 25/11/2026 | Quando il Mac non è collegato, Claude fa commit e push direttamente su `main` di GitHub; poi sul Mac basta un Pull con Fork |
 | 25/11/2026 | Investimenti: si registreranno in nummo come trasferimenti (voce "Sposta"), come in 1Money; sostituisce "niente trasferimenti tra conti" del 24/11. Si fa dopo la fine dell'app principale |
 
 ## Registro
 
+- **25/11/2026** – Layout A di Inserisci in `frontend/app.js` (`posizioneCornice`) e `frontend/app.css`; aggiornati `docs/overview_funzionale.md`, `docs/design_v3.md` e `CLAUDE.md`. Provato in Chrome headless simulando il Galaxy A54 con importi da un anno intero (niente scorrimento da 891 a 720 px), più tutte le prove precedenti (92 controlli). Commit fatto da Claude direttamente su GitHub, con il Mac non collegato.
 - **25/11/2026** – Tasto Indietro: aprire un pannello aggiunge un passo alla cronologia (`history.pushState`), chiuderlo in qualunque modo lo toglie; un pannello che ne sostituisce un altro non aggiunge passi. Centro dell'anello cliccabile (`scambia-tipo`). Provato in Chrome headless (16 controlli, anche chiusura e apertura immediata), più tutte le prove precedenti.
 - **25/11/2026** – Bilanci API aggiornato (mancava la Nuova versione del deployment): i periodi funzionano sul telefono. Allineati i documenti di specifica alle decisioni di oggi: `docs/overview_funzionale.md` (periodo, schermate senza scorrimento, Nuova spesa, Movimenti, Impostazioni, coda, Liquidità definitivo, Sposta dopo l'app principale, nessun punto aperto), `docs/design_v3.md` (area utile, testata, riga e pannello Periodo, capsula di sincronizzazione, righe scorrevoli, pannello compatto), `CLAUDE.md` (azioni di lettura, periodo, layout); stesse modifiche nelle copie del progetto Claude.
 - **25/11/2026** – Periodi provati dall'utente: il pannello funziona, ma Anno risponde ancora "Aggiorna Bilanci API" (il deployment in uso non ha l'azione `periodo`). Corretto anche un difetto dell'app: un periodo non scaricato non veniva più richiesto fino alla riapertura; ora c'è il pulsante Riprova e si riprova a ogni cambio di periodo e a ogni sincronizzazione.

@@ -657,12 +657,16 @@
     return '<button type="button" class="capsula-sync vetro-leggero' + classe + '" data-azione="sincronizza">' + icona + esc(testo) + '</button>';
   }
 
-  /** Posizioni della cornice 5×4 attorno all'anello: riga 1, lati (righe 2–3), riga 4; poi righe in più sotto. */
+  /**
+   * Posizioni della cornice a 4 colonne attorno all'anello (colonne 2–3, righe 2–3):
+   * riga 1 (4), lato sinistro (righe 2–3), lato destro (righe 2–3), riga 4 (4), riga 5 (2 al centro);
+   * oltre la 14ª, righe da 4 sotto.
+   */
   function posizioneCornice(i) {
-    const giro = [[1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [2, 1], [3, 1], [2, 5], [3, 5], [4, 1], [4, 2], [4, 3], [4, 4], [4, 5]];
+    const giro = [[1, 1], [1, 2], [1, 3], [1, 4], [2, 1], [3, 1], [2, 4], [3, 4], [4, 1], [4, 2], [4, 3], [4, 4], [5, 2], [5, 3]];
     if (i < giro.length) return giro[i];
     const k = i - giro.length;
-    return [5 + Math.floor(k / 5), 1 + (k % 5)];
+    return [6 + Math.floor(k / 4), 1 + (k % 4)];
   }
 
   /** Anello SVG: segmenti per categoria, dal più grande, con un piccolo stacco. */
