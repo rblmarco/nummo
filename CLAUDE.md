@@ -23,7 +23,8 @@ frontend/               web app (pubblicata su GitHub Pages dal workflow .github
   api.js                chiamate a Bilanci API
   sw.js                 service worker: cache dei file per uso offline
   manifest.webmanifest  icona e nome per "Aggiungi a schermata Home"
-  icons/
+  icons/                icone di nummo; bilanci-*.png è l'icona della dashboard Bilanci,
+                        pubblicata da qui perché la dashboard la legga (vedi README-FE.md)
 backend/
   Code.gs               Bilanci API: progetto Apps Script separato, si incolla a mano
 docs/                   specifiche (vedi sopra)

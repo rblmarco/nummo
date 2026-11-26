@@ -1,6 +1,6 @@
 # Stato del progetto nummo
 
-Ultimo aggiornamento: 26/11/2026 (1)
+Ultimo aggiornamento: 26/11/2026 (2)
 
 **Fase attuale**: Movimenti scritta e provata con un Bilanci API finto (lista, In programma, modifica, duplica, elimina, ricerca, filtri, coda offline per update e delete). Prossimo passo: prova di Movimenti sul telefono, poi service worker.
 
@@ -98,6 +98,7 @@ Ultimo aggiornamento: 26/11/2026 (1)
 
 ## Registro
 
+- **26/11/2026** – Icona della dashboard Bilanci, coerente con quella di nummo (anello con tre barre): `frontend/icons/bilanci-512.png`, `bilanci-192.png`, `bilanci-apple-touch-icon.png`, `bilanci-favicon-32.png`. Sta nel repo solo perché GitHub Pages la renda pubblica: la dashboard la usa con `setFaviconUrl` nel suo `doGet`. Non è usata dall'app nummo. Spiegazione in `README-FE.md` (sezione Icona della dashboard Bilanci) e richiamo in `CLAUDE.md`.
 - **26/11/2026** – Service worker `frontend/sw.js` e registrazione in `frontend/app.js`, con `VERSIONE_APP` mostrata in Impostazioni; aggiornati `README-FE.md`, `CLAUDE.md`, `docs/overview_funzionale.md`. Provato in Chrome headless su un server locale: pagina controllata dal service worker, file in cache, dati da Bilanci API invariati, apertura offline (anche da zero) con dati e coda, coda inviata al ritorno della rete, versione nuova subito dopo una modifica sul server e disponibile anche offline, cambio di versione del service worker con pulizia della cache vecchia; più tutte le prove precedenti.
 - **25/11/2026** – Layout A di Inserisci in `frontend/app.js` (`posizioneCornice`) e `frontend/app.css`; aggiornati `docs/overview_funzionale.md`, `docs/design_v3.md` e `CLAUDE.md`. Provato in Chrome headless simulando il Galaxy A54 con importi da un anno intero (niente scorrimento da 891 a 720 px), più tutte le prove precedenti (92 controlli). Commit fatto da Claude direttamente su GitHub, con il Mac non collegato.
 - **25/11/2026** – Tasto Indietro: aprire un pannello aggiunge un passo alla cronologia (`history.pushState`), chiuderlo in qualunque modo lo toglie; un pannello che ne sostituisce un altro non aggiunge passi. Centro dell'anello cliccabile (`scambia-tipo`). Provato in Chrome headless (16 controlli, anche chiusura e apertura immediata), più tutte le prove precedenti.

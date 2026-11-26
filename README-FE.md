@@ -63,5 +63,22 @@ Il repository è pubblico e tutto ciò che sta in `frontend/` è pubblicato: nie
 | `api.js` | chiamate a Bilanci API: lettura (`ping`, `bootstrap`, `mese`, `periodo`) e scrittura (`invia`, POST con le operazioni `add` / `update` / `delete`) |
 | `sw.js` | service worker: copia dei file dell'app e dei font per aprirla senza rete; per i file dell'app chiede sempre prima la rete, quindi dopo un push basta riaprire l'app |
 | `manifest.webmanifest` | nome, colori e icone usati da "Aggiungi a schermata Home" |
-| `icons/` | icone PNG (192, 512, 180 per iOS, 32 per il browser) e sorgente `icona.svg` |
+| `icons/` | icone PNG (192, 512, 180 per iOS, 32 per il browser) e sorgente `icona.svg`; in più le icone `bilanci-*.png` della dashboard Bilanci (vedi sotto) |
+
+## Icona della dashboard Bilanci
+
+Le immagini `frontend/icons/bilanci-*.png` non servono a nummo: sono l'icona della **dashboard Bilanci**, la web app Apps Script separata che legge il foglio. Stanno qui solo perché GitHub Pages le pubblica a un indirizzo pubblico, e Apps Script non può contenere immagini: accetta soltanto l'indirizzo di un'immagine.
+
+Come funziona:
+
+1. Il push su `main` pubblica `frontend/` su GitHub Pages, quindi l'icona diventa raggiungibile a `https://<utente>.github.io/nummo/icons/bilanci-192.png`.
+2. Nel `Code.gs` della dashboard, la voce `ICONA` di `CONFIG` contiene quell'indirizzo.
+3. Il `doGet` della dashboard la passa a Google con `.setFaviconUrl(CONFIG.ICONA)`. A ogni apertura della web app Google scarica l'immagine da quell'indirizzo e la usa come icona della pagina.
+
+Da sapere:
+
+- Prima fai il push, poi aggiorna la dashboard: apri l'indirizzo dell'icona nel browser per controllare che sia pubblicata, poi incolla il `Code.gs` e fai Gestisci deployment → matita → Nuova versione.
+- L'icona compare nella scheda del browser della web app. Nella finestra aperta dal menu del foglio Google non mostra icone. Sulla schermata Home del telefono decide Chrome: se la dashboard c'era già, va tolta e aggiunta di nuovo, e Chrome può comunque usare un'icona generica.
+- **Non rinominare né spostare** i file `bilanci-*.png`: la dashboard li cerca a quell'indirizzo. Se cambi il disegno, sostituisci i file con lo stesso nome.
+- Disegno: stesso fondo e stesso anello di `icona.svg`, con tre barre al centro (azzurro, lilla, arancio) al posto della "n".
 
