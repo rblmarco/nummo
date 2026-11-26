@@ -7,6 +7,16 @@
 (function () {
   'use strict';
 
+  /** Versione dell'app mostrata in Impostazioni: si aggiorna a ogni consegna, serve a vedere se il telefono ha l'ultima */
+  const VERSIONE_APP = '26/11/2026 · 1';
+
+  /* ---------- Service worker: uso offline e aggiornamento automatico (sw.js) ---------- */
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (err) { console.warn('Service worker non registrato:', err); });
+    });
+  }
+
   /* ---------- Configurazione del dispositivo (localStorage) ---------- */
 
   const LS = { URL: 'nummo.url', KEY: 'nummo.key', DASHBOARD: 'nummo.dashboard', ESITO: 'nummo.esito' };
@@ -630,6 +640,7 @@
       '<span class="gruppo-titolo">Preferenze</span>' +
       '<div class="gruppo vetro">' +
         riga({ icona: 'tune', colore: '#64748B', nome: 'Conto preselezionato', valore: conto ? conto.nome : '–' }) +
+        riga({ icona: 'info', colore: '#475569', nome: 'Versione app', valore: VERSIONE_APP }) +
         (c.dashboard
           ? riga({ href: c.dashboard, link: true, icona: 'insights', colore: '#2563EB', nome: 'Apri la dashboard', fine: 'open_in_new', fineClasse: 'nav' })
           : riga({ azione: 'collegamento', link: true, icona: 'insights', colore: '#2563EB', nome: 'Apri la dashboard', valore: 'Da impostare', fine: 'chevron_right', fineClasse: 'nav' })) +

@@ -36,7 +36,9 @@ Poi apri `http://localhost:8000`. Il doppio clic su `index.html` non basta: la p
 
 ## Dopo ogni modifica al codice
 
-Basta il push su `main`: il workflow ripubblica l'app in un paio di minuti. Parte solo se cambiano file in `frontend/` o il workflow stesso; per ripubblicare a mano: **Actions** → **Pubblica su GitHub Pages** → **Run workflow**.
+Basta il push su `main`: il workflow ripubblica l'app in un paio di minuti. Sul telefono basta chiudere e riaprire l'app: il service worker carica i file nuovi (in Impostazioni, "Versione app" mostra quale versione è in uso). Se GitHub Pages ha ancora in cache la versione precedente può servire qualche minuto.
+
+A ogni consegna si aggiorna `VERSIONE_APP` in `frontend/app.js`. `VERSIONE` in `frontend/sw.js` si cambia solo se cambia l'elenco dei file salvati o il funzionamento del service worker. Parte solo se cambiano file in `frontend/` o il workflow stesso; per ripubblicare a mano: **Actions** → **Pubblica su GitHub Pages** → **Run workflow**.
 
 ## Il workflow `pages.yml`
 
@@ -57,9 +59,9 @@ Il repository è pubblico e tutto ciò che sta in `frontend/` è pubblicato: nie
 | --- | --- |
 | `index.html` | struttura della pagina: tre schermate, barra in basso, pannello dal basso |
 | `app.css` | stile v3 "vetro" (`docs/design_v3.md`) |
-| `app.js` | interfaccia, stato, copia locale dei dati e coda offline in IndexedDB |
+| `app.js` | interfaccia, stato, copia locale dei dati e coda offline in IndexedDB; in cima `VERSIONE_APP`, mostrata in Impostazioni |
 | `api.js` | chiamate a Bilanci API: lettura (`ping`, `bootstrap`, `mese`, `periodo`) e scrittura (`invia`, POST con le operazioni `add` / `update` / `delete`) |
+| `sw.js` | service worker: copia dei file dell'app e dei font per aprirla senza rete; per i file dell'app chiede sempre prima la rete, quindi dopo un push basta riaprire l'app |
 | `manifest.webmanifest` | nome, colori e icone usati da "Aggiungi a schermata Home" |
 | `icons/` | icone PNG (192, 512, 180 per iOS, 32 per il browser) e sorgente `icona.svg` |
 
-In arrivo: `sw.js` (uso offline).

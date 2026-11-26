@@ -109,7 +109,7 @@ Tre schermate dalla barra in basso (Inserisci, Movimenti, Impostazioni) più il 
 - Prima apertura: pannello dal basso "Collegamento" con indirizzo di Bilanci API, chiave e indirizzo della dashboard (facoltativo), una volta per dispositivo; pulsanti Prova e Salva.
 - Sincronizzazione: ultima volta, in attesa, "Sincronizza ora".
 - Dati dal foglio: categorie, conti, tag (automatico all'apertura o a mano).
-- Conto preselezionato (il conto predefinito del foglio Conti, in sola lettura), link alla dashboard.
+- Conto preselezionato (il conto predefinito del foglio Conti, in sola lettura), versione dell'app in uso, link alla dashboard.
 - Errori mostrati in ambra: la palette non ha un rosso.
 
 ## Categorie che cambiano nel tempo
@@ -129,6 +129,8 @@ Ogni movimento salva categoria e sottocategoria come testo. Cambiare lo schema n
 2. L'app lo invia appena c'è rete; se fallisce riprova all'apertura e a ogni salvataggio.
 3. Bilanci API controlla la chiave, usa un lock, scrive; se l'ID esiste già non duplica.
 4. L'app segna il movimento come sincronizzato.
+
+L'app stessa si apre anche senza rete: il service worker tiene una copia dei suoi file e dei font, e a ogni apertura con la rete scarica la versione più recente.
 
 Modifiche ed eliminazioni seguono la stessa coda, con una sola voce per ID: un movimento non ancora inviato e poi modificato resta un `add`; se lo si elimina prima dell'invio sparisce dalla coda e al foglio non arriva nulla. L'app ritenta anche al ritorno della rete e quando torna in primo piano. All'apertura l'app scarica categorie, conti, tag e movimenti recenti (ultimi 3 mesi e futuri); i periodi più vecchi si scaricano a richiesta (vedi Periodo). Limiti: 1–3 s per invio (in background); conflitti tra due dispositivi offline: vince l'ultimo; cancellare i dati del browser prima di sincronizzare perde la coda.
 

@@ -51,6 +51,7 @@ docs/                   specifiche (vedi sopra)
 - Categorie salvate come testo "Macro (Sub)": cambiare lo schema non tocca lo storico; le categorie non più attive si mostrano in grigio sui movimenti vecchi.
 - Periodo come in 1Money, uno solo per Inserisci e Movimenti (mese, anno, settimana, giorno, oggi, intervallo, tutto il periodo), salvato sul dispositivo.
 - La pagina non scorre mai: ogni schermata ha una parte in alto (`.testata`) che galleggia sopra un'area (`.scorre`) che scorre solo se serve. Le misure si basano sull'area utile tra barra di stato e barra di navigazione, non sull'altezza dello schermo.
+- Service worker `frontend/sw.js`: per i file dell'app prima la rete e poi la copia salvata (uso offline e aggiornamento alla riapertura), per i font prima la copia salvata; non tocca le chiamate a Bilanci API. A ogni consegna aggiorna `VERSIONE_APP` in cima a `frontend/app.js` (mostrata in Impostazioni).
 - Riferimento schermo: Galaxy A54 (412×892), layout fluido. Prima di consegnare, prova anche con le barre di sistema simulate (app installata da bordo a bordo).
 
 ## Come lavorare
